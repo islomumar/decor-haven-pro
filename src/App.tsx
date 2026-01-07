@@ -25,6 +25,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import ThankYou from "./pages/ThankYou";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminAuth from "./pages/admin/Auth";
@@ -127,6 +129,8 @@ const App = () => (
                               <Route path="/contact" element={<Contact />} />
                               <Route path="/faq" element={<FAQ />} />
                               <Route path="/cart" element={<Cart />} />
+                              <Route path="/checkout" element={<Checkout />} />
+                              <Route path="/thank-you" element={<ThankYou />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </main>

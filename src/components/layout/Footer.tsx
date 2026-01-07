@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Send } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { EditableText } from '@/components/EditableText';
 
 export function Footer() {
   const { language, t } = useLanguage();
@@ -64,10 +65,15 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Description */}
-            <p className="text-primary-foreground/80 text-sm leading-relaxed max-w-xs">
-              {shortDescription || t.footer.description}
-            </p>
+            {/* Description - Editable */}
+            <EditableText
+              contentKey="footer_description"
+              fallback={shortDescription || t.footer.description}
+              as="p"
+              className="text-primary-foreground/80 text-sm leading-relaxed max-w-xs"
+              multiline
+              section="footer"
+            />
 
             {/* Social Icons */}
             <div className="flex gap-3 pt-2">
@@ -108,9 +114,13 @@ export function Footer() {
 
           {/* Quick Links Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
-              {t.footer.quickLinks}
-            </h4>
+            <EditableText
+              contentKey="footer_quick_links_title"
+              fallback={t.footer.quickLinks}
+              as="h4"
+              className="font-serif font-semibold text-lg mb-5 text-primary-foreground"
+              section="footer"
+            />
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.to}>
@@ -128,56 +138,66 @@ export function Footer() {
 
           {/* Contact Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
-              {t.footer.contact}
-            </h4>
+            <EditableText
+              contentKey="footer_contact_title"
+              fallback={t.footer.contact}
+              as="h4"
+              className="font-serif font-semibold text-lg mb-5 text-primary-foreground"
+              section="footer"
+            />
             <ul className="space-y-4">
-              {address && (
-                <li className="flex items-start gap-3 group">
-                  <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5 text-primary-foreground/60" />
-                  <span className="text-primary-foreground/70 text-sm leading-relaxed">
-                    {address}
-                  </span>
-                </li>
-              )}
-              {contactPhone && (
-                <li className="flex items-center gap-3 group">
-                  <Phone className="w-5 h-5 flex-shrink-0 text-primary-foreground/60" />
-                  <a 
-                    href={`tel:${contactPhone.replace(/\s/g, '')}`} 
-                    className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors duration-200"
-                  >
-                    {contactPhone}
-                  </a>
-                </li>
-              )}
+              <li className="flex items-start gap-3 group">
+                <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5 text-primary-foreground/60" />
+                <EditableText
+                  contentKey="footer_address"
+                  fallback={address || "Toshkent sh., Chilonzor tumani, Bunyodkor ko'chasi, 15-uy"}
+                  as="span"
+                  className="text-primary-foreground/70 text-sm leading-relaxed"
+                  multiline
+                  section="footer"
+                />
+              </li>
+              <li className="flex items-center gap-3 group">
+                <Phone className="w-5 h-5 flex-shrink-0 text-primary-foreground/60" />
+                <EditableText
+                  contentKey="footer_phone"
+                  fallback={contactPhone}
+                  as="span"
+                  className="text-primary-foreground/70 text-sm"
+                  section="footer"
+                />
+              </li>
               <li className="flex items-center gap-3 group">
                 <Mail className="w-5 h-5 flex-shrink-0 text-primary-foreground/60" />
-                <a 
-                  href={`mailto:info@${window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}`} 
-                  className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors duration-200 break-all"
-                >
-                  info@{window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}
-                </a>
+                <EditableText
+                  contentKey="footer_email"
+                  fallback={`info@${window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}`}
+                  as="span"
+                  className="text-primary-foreground/70 text-sm break-all"
+                  section="footer"
+                />
               </li>
             </ul>
           </div>
 
           {/* Working Hours Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
-              {t.footer.workingHours}
-            </h4>
+            <EditableText
+              contentKey="footer_working_hours_title"
+              fallback={t.footer.workingHours}
+              as="h4"
+              className="font-serif font-semibold text-lg mb-5 text-primary-foreground"
+              section="footer"
+            />
             <div className="text-sm text-primary-foreground/70 leading-relaxed">
-              {workingHours ? (
-                <p>{workingHours}</p>
-              ) : (
-                <div className="space-y-2">
-                  <p>{t.footer.weekdays}</p>
-                  <p className="text-primary-foreground/90 font-medium">{t.footer.saturday}</p>
-                  <p>{t.footer.sunday}</p>
-                </div>
-              )}
+              <EditableText
+                contentKey="footer_working_hours"
+                fallback={workingHours || `${t.footer.weekdays}\n${t.footer.saturday}\n${t.footer.sunday}`}
+                as="p"
+                className="text-primary-foreground/70"
+                multiline
+                section="footer"
+              />
             </div>
           </div>
         </div>
@@ -188,7 +208,14 @@ export function Footer() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center">
             <p className="text-sm text-primary-foreground/50">
-              © {new Date().getFullYear()} {siteName}. {t.footer.rights}
+              © {new Date().getFullYear()}{' '}
+              <EditableText
+                contentKey="footer_copyright"
+                fallback={`${siteName}. ${t.footer.rights}`}
+                as="span"
+                className="text-primary-foreground/50"
+                section="footer"
+              />
             </p>
           </div>
         </div>

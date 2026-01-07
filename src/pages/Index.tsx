@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { useFeaturedProducts, useCategories } from '@/hooks/useProducts';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
+import { EditableImage } from '@/components/EditableImage';
 import { LazyImage } from '@/components/LazyImage';
 
 export default function Index() {
@@ -17,10 +18,13 @@ export default function Index() {
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center">
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920"
+          <EditableImage
+            contentKey="hero_background_image"
+            fallbackSrc="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920"
             alt="Modern living room"
             className="w-full h-full object-cover"
+            wrapperClassName="w-full h-full"
+            section="hero"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
         </div>

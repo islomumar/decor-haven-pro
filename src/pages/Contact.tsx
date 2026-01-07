@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
+import { EditableImage } from '@/components/EditableImage';
 
 export default function Contact() {
   const { language, t } = useLanguage();
@@ -188,19 +189,14 @@ export default function Contact() {
               </Button>
             </div>
 
-            {/* Map Placeholder */}
-            <div className="rounded-2xl overflow-hidden h-64 bg-muted">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2996.548469746612!2d69.2243!3d41.3111!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDHCsDE4JzQwLjAiTiA2OcKwMTMnMjcuNSJF!5e0!3m2!1sen!2s!4v1234567890"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Location"
-              />
-            </div>
+            {/* Map Image */}
+            <EditableImage
+              contentKey="contact_map_image"
+              fallbackSrc="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80"
+              alt="Bizning joylashuvimiz"
+              className="rounded-2xl h-64 w-full object-cover"
+              section="contact"
+            />
           </div>
         </div>
       </div>

@@ -115,6 +115,48 @@ export type Database = {
         }
         Relationships: []
       }
+      themes: {
+        Row: {
+          color_palette: Json
+          component_styles: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          is_dark: boolean
+          layout_settings: Json
+          name: string
+          slug: string
+          typography: Json
+          updated_at: string
+        }
+        Insert: {
+          color_palette?: Json
+          component_styles?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_dark?: boolean
+          layout_settings?: Json
+          name: string
+          slug: string
+          typography?: Json
+          updated_at?: string
+        }
+        Update: {
+          color_palette?: Json
+          component_styles?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_dark?: boolean
+          layout_settings?: Json
+          name?: string
+          slug?: string
+          typography?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

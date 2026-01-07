@@ -4,6 +4,7 @@ import { ArrowLeft, Star, ShoppingBag, MessageCircle, Phone, Check, Loader2 } fr
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductCard } from '@/components/ProductCard';
+import { ImageLightbox } from '@/components/ImageLightbox';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
 import { useProductById, useProducts, useCategories, Product } from '@/hooks/useProducts';
@@ -17,6 +18,7 @@ export default function ProductDetails() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Fetch product from database by ID or slug
   const { product, loading, error } = useProductById(id || '');
@@ -102,12 +104,15 @@ export default function ProductDetails() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Images */}
           <div>
-            <div className="aspect-square rounded-2xl overflow-hidden bg-muted mb-4">
+            <div 
+              className="aspect-square rounded-2xl overflow-hidden bg-muted mb-4 cursor-zoom-in"
+              onClick={() => images.length > 0 && setLightboxOpen(true)}
+            >
               {images.length > 0 ? (
                 <img
                   src={images[selectedImage] || images[0]}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -130,6 +135,14 @@ export default function ProductDetails() {
                 ))}
               </div>
             )}
+
+            {/* Image Lightbox */}
+            <ImageLightbox
+              images={images}
+              initialIndex={selectedImage}
+              isOpen={lightboxOpen}
+              onClose={() => setLightboxOpen(false)}
+            />
           </div>
 
           {/* Info */}

@@ -1,14 +1,152 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from 'react-router-dom';
+import { ArrowRight, Star, Truck, Shield, Palette, Headphones, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ProductCard } from '@/components/ProductCard';
+import { products, categories, reviews } from '@/lib/data';
+import { useLanguage } from '@/hooks/useLanguage';
 
-const Index = () => {
+export default function Index() {
+  const { language, t } = useLanguage();
+  const featuredProducts = products.filter(p => p.featured).slice(0, 8);
+
+  const benefits = [
+    { icon: Palette, title: t.benefits.custom, desc: t.benefits.customDesc },
+    { icon: Truck, title: t.benefits.delivery, desc: t.benefits.deliveryDesc },
+    { icon: Shield, title: t.benefits.warranty, desc: t.benefits.warrantyDesc },
+    { icon: Award, title: t.benefits.quality, desc: t.benefits.qualityDesc },
+    { icon: Headphones, title: t.benefits.consultation, desc: t.benefits.consultationDesc },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative h-[80vh] min-h-[600px] flex items-center">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920"
+            alt="Modern living room"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-xl">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 animate-fade-in">
+              {t.hero.title}
+            </h1>
+            <p className="text-lg text-muted-foreground mb-8 animate-fade-in">
+              {t.hero.subtitle}
+            </p>
+            <div className="flex flex-wrap gap-4 animate-fade-in">
+              <Button asChild size="lg" className="rounded-full px-8">
+                <Link to="/catalog">{t.hero.cta}</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="rounded-full px-8">
+                <Link to="/contact">{t.hero.consultation}</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <h2 className="font-serif text-3xl font-bold text-center mb-12">{t.benefits.title}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {benefits.map((benefit, i) => (
+              <div key={i} className="text-center p-6 bg-card rounded-2xl shadow-warm">
+                <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                  <benefit.icon className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="font-medium text-sm mb-2">{benefit.title}</h3>
+                <p className="text-xs text-muted-foreground">{benefit.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-10">
+            <h2 className="font-serif text-3xl font-bold">{t.products.featured}</h2>
+            <Button asChild variant="ghost" className="gap-2">
+              <Link to="/catalog">{t.products.viewAll} <ArrowRight className="w-4 h-4" /></Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <h2 className="font-serif text-3xl font-bold text-center mb-10">{t.categories.title}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.slice(0, 8).map(category => (
+              <Link
+                key={category.id}
+                to={`/catalog?category=${category.id}`}
+                className="group relative aspect-square rounded-2xl overflow-hidden"
+              >
+                <img src={category.image} alt={language === 'uz' ? category.name_uz : category.name_ru} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-white font-medium text-lg">{language === 'uz' ? category.name_uz : category.name_ru}</h3>
+                  <p className="text-white/70 text-sm">{category.productCount} {t.catalog.products}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Promo Banner */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary to-warm-brown p-8 md:p-16">
+            <div className="relative z-10 max-w-lg">
+              <span className="inline-block bg-accent text-accent-foreground text-sm font-medium px-4 py-1 rounded-full mb-4">{t.promo.title}</span>
+              <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary-foreground mb-4">{t.promo.subtitle}</h2>
+              <p className="text-primary-foreground/80 mb-6">{t.promo.description}</p>
+              <Button asChild size="lg" variant="secondary" className="rounded-full">
+                <Link to="/catalog">{t.promo.cta}</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <h2 className="font-serif text-3xl font-bold text-center mb-10">{t.reviews.title}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {reviews.map(review => (
+              <div key={review.id} className="bg-card p-6 rounded-2xl shadow-warm">
+                <div className="flex items-center gap-3 mb-4">
+                  <img src={review.avatar} alt={review.name} className="w-12 h-12 rounded-full object-cover" />
+                  <div>
+                    <h4 className="font-medium text-sm">{review.name}</h4>
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-gold-accent text-gold-accent' : 'text-muted'}`} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">{language === 'uz' ? review.text_uz : review.text_ru}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default Index;
+}

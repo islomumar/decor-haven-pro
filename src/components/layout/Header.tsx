@@ -1,0 +1,123 @@
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, ShoppingBag, Phone } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useCart } from '@/hooks/useCart';
+
+export function Header() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
+  const { totalItems } = useCart();
+  const location = useLocation();
+
+  const navLinks = [
+    { href: '/', label: t.nav.home },
+    { href: '/catalog', label: t.nav.catalog },
+    { href: '/about', label: t.nav.about },
+    { href: '/contact', label: t.nav.contact },
+    { href: '/faq', label: t.nav.faq },
+  ];
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16 md:h-20">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-serif font-bold text-xl">M</span>
+            </div>
+            <span className="font-serif text-xl font-bold text-foreground hidden sm:block">Mebel Usta</span>
+          </Link>
+
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(link.href) ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Language Switcher */}
+            <div className="flex items-center bg-muted rounded-full p-1">
+              <button
+                onClick={() => setLanguage('uz')}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  language === 'uz' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                UZ
+              </button>
+              <button
+                onClick={() => setLanguage('ru')}
+                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                  language === 'ru' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                RU
+              </button>
+            </div>
+
+            {/* Phone */}
+            <a href="tel:+998901234567" className="hidden md:flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary">
+              <Phone className="w-4 h-4" />
+              <span>+998 90 123 45 67</span>
+            </a>
+
+            {/* Cart */}
+            <Link to="/cart" className="relative">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingBag className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Nav */}
+        {isOpen && (
+          <nav className="lg:hidden py-4 border-t border-border">
+            <div className="flex flex-col gap-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(link.href) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <a href="tel:+998901234567" className="px-4 py-3 flex items-center gap-2 text-sm font-medium text-foreground">
+                <Phone className="w-4 h-4" /> +998 90 123 45 67
+              </a>
+            </div>
+          </nav>
+        )}
+      </div>
+    </header>
+  );
+}

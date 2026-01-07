@@ -255,26 +255,48 @@ export function useProductBySlug(slug: string) {
   return { product, loading, error };
 }
 
-export function useProductById(id: string) {
+export function useProductById(idOrSlug: string) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) {
+      if (!idOrSlug) {
         setLoading(false);
         return;
       }
 
       try {
-        const { data, error: queryError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .maybeSingle();
+        // First try to find by ID (UUID format)
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+        
+        let data = null;
+        
+        if (isUUID) {
+          // Search by ID first
+          const { data: idData, error: idError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', idOrSlug)
+            .maybeSingle();
+          
+          if (idError) throw idError;
+          data = idData;
+        }
+        
+        // If not found by ID, try by slug
+        if (!data) {
+          const { data: slugData, error: slugError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('slug', idOrSlug)
+            .maybeSingle();
+          
+          if (slugError) throw slugError;
+          data = slugData;
+        }
 
-        if (queryError) throw queryError;
         setProduct(data);
       } catch (err) {
         console.error('Error fetching product:', err);
@@ -285,7 +307,7 @@ export function useProductById(id: string) {
     };
 
     fetchProduct();
-  }, [id]);
+  }, [idOrSlug]);
 
   return { product, loading, error };
 }

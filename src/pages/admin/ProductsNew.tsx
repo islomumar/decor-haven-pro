@@ -386,8 +386,17 @@ export default function ProductsNew() {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields
     if (!formData.name_uz || !formData.name_ru) {
       toast({ variant: 'destructive', title: 'Xatolik', description: 'Mahsulot nomini kiriting' });
+      setActiveTab('basic');
+      return;
+    }
+
+    // Validate category is required
+    if (!formData.category_id) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Kategoriyani tanlash majburiy!' });
+      setActiveTab('basic');
       return;
     }
 

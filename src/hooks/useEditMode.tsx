@@ -18,13 +18,16 @@ const EDIT_MODE_STORAGE_KEY = 'lovable_edit_mode';
 export function EditModeProvider({ children }: { children: ReactNode }) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const { isAdmin, isManager, hasPermission, user } = useAuth();
+  const { isAdmin, isManager, hasPermission, user, loading } = useAuth();
   
   // Admin and Manager can edit site content
   const canEdit = isAdmin || isManager || hasPermission('siteContent', 'edit');
 
-  // Initialize edit mode from URL params or localStorage
+  // Initialize edit mode from URL params or localStorage - only after auth loads
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (loading) return;
+    
     if (!canEdit || !user) {
       setIsEditMode(false);
       return;
@@ -50,7 +53,7 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
     if (storedEditMode === 'true') {
       setIsEditMode(true);
     }
-  }, [canEdit, user]);
+  }, [canEdit, user, loading]);
 
   const toggleEditMode = useCallback(() => {
     if (canEdit) {

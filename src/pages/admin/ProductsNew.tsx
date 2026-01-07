@@ -1,5 +1,19 @@
-import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Eye, Image as ImageIcon, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Eye, 
+  Image as ImageIcon, 
+  X, 
+  Upload, 
+  Globe,
+  Search,
+  Star,
+  Package,
+  GripVertical,
+  RefreshCw
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 
@@ -26,6 +41,7 @@ interface Product {
   id: string;
   name_uz: string;
   name_ru: string;
+  slug: string | null;
   description_uz: string | null;
   description_ru: string | null;
   full_description_uz: string | null;
@@ -42,11 +58,48 @@ interface Product {
   is_featured: boolean;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
+  meta_title_uz: string | null;
+  meta_title_ru: string | null;
+  meta_description_uz: string | null;
+  meta_description_ru: string | null;
+  meta_keywords: string | null;
+  is_indexed: boolean;
+  is_followed: boolean;
 }
 
-const emptyForm = {
+interface FormData {
+  name_uz: string;
+  name_ru: string;
+  slug: string;
+  description_uz: string;
+  description_ru: string;
+  full_description_uz: string;
+  full_description_ru: string;
+  category_id: string;
+  price: string;
+  original_price: string;
+  images: string[];
+  materials: string;
+  sizes: string;
+  colors: string;
+  is_negotiable: boolean;
+  in_stock: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  meta_title_uz: string;
+  meta_title_ru: string;
+  meta_description_uz: string;
+  meta_description_ru: string;
+  meta_keywords: string;
+  is_indexed: boolean;
+  is_followed: boolean;
+}
+
+const emptyForm: FormData = {
   name_uz: '',
   name_ru: '',
+  slug: '',
   description_uz: '',
   description_ru: '',
   full_description_uz: '',
@@ -54,7 +107,7 @@ const emptyForm = {
   category_id: '',
   price: '',
   original_price: '',
-  images: [] as string[],
+  images: [],
   materials: '',
   sizes: '',
   colors: '',
@@ -62,6 +115,13 @@ const emptyForm = {
   in_stock: true,
   is_featured: false,
   is_active: true,
+  meta_title_uz: '',
+  meta_title_ru: '',
+  meta_description_uz: '',
+  meta_description_ru: '',
+  meta_keywords: '',
+  is_indexed: true,
+  is_followed: true,
 };
 
 export default function ProductsNew() {
@@ -72,8 +132,15 @@ export default function ProductsNew() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState(emptyForm);
+  const [formData, setFormData] = useState<FormData>(emptyForm);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [slugError, setSlugError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('basic');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { language } = useLanguage();
 
@@ -95,10 +162,37 @@ export default function ProductsNew() {
       setCategories(categoriesRes.data || []);
     } catch (error) {
       console.error('Error:', error);
-      toast({ variant: 'destructive', title: 'Xatolik', description: 'Ma\'lumotlarni yuklashda xatolik' });
+      toast({ variant: 'destructive', title: 'Xatolik', description: "Ma'lumotlarni yuklashda xatolik" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateSlug = (name: string) => {
+    const translitMap: Record<string, string> = {
+      'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+      'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+      'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'x', 'ц': 'ts',
+      'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+      'ў': 'o', 'қ': 'q', 'ғ': 'g', 'ҳ': 'h'
+    };
+    
+    return name
+      .toLowerCase()
+      .split('')
+      .map(char => translitMap[char] || char)
+      .join('')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  };
+
+  const checkSlugUnique = async (slug: string, excludeId?: string): Promise<boolean> => {
+    const query = supabase.from('products').select('id').eq('slug', slug);
+    if (excludeId) query.neq('id', excludeId);
+    const { data } = await query;
+    return !data || data.length === 0;
   };
 
   const formatPrice = (price: number | null) => {
@@ -115,6 +209,8 @@ export default function ProductsNew() {
   const openCreateDialog = () => {
     setSelectedProduct(null);
     setFormData(emptyForm);
+    setSlugError('');
+    setActiveTab('basic');
     setDialogOpen(true);
   };
 
@@ -123,6 +219,7 @@ export default function ProductsNew() {
     setFormData({
       name_uz: product.name_uz,
       name_ru: product.name_ru,
+      slug: product.slug || '',
       description_uz: product.description_uz || '',
       description_ru: product.description_ru || '',
       full_description_uz: product.full_description_uz || '',
@@ -138,11 +235,79 @@ export default function ProductsNew() {
       in_stock: product.in_stock,
       is_featured: product.is_featured,
       is_active: product.is_active,
+      meta_title_uz: product.meta_title_uz || '',
+      meta_title_ru: product.meta_title_ru || '',
+      meta_description_uz: product.meta_description_uz || '',
+      meta_description_ru: product.meta_description_ru || '',
+      meta_keywords: product.meta_keywords || '',
+      is_indexed: product.is_indexed ?? true,
+      is_followed: product.is_followed ?? true,
     });
+    setSlugError('');
+    setActiveTab('basic');
     setDialogOpen(true);
   };
 
-  const addImage = () => {
+  const handleNameChange = (value: string, field: 'name_uz' | 'name_ru') => {
+    const newFormData = { ...formData, [field]: value };
+    
+    if (field === 'name_uz' && (!formData.slug || formData.slug === generateSlug(formData.name_uz))) {
+      newFormData.slug = generateSlug(value);
+    }
+    
+    setFormData(newFormData);
+  };
+
+  const handleSlugChange = async (value: string) => {
+    const cleanSlug = value.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
+    setFormData({ ...formData, slug: cleanSlug });
+    
+    if (cleanSlug) {
+      const isUnique = await checkSlugUnique(cleanSlug, selectedProduct?.id);
+      setSlugError(isUnique ? '' : 'Bu slug allaqachon mavjud');
+    } else {
+      setSlugError('');
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      setFormData({ ...formData, images: [...formData.images, ...uploadedUrls] });
+      toast({ title: 'Muvaffaqiyat', description: `${uploadedUrls.length} ta rasm yuklandi` });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Rasmni yuklashda xatolik: ' + error.message });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const addImageUrl = () => {
     if (newImageUrl.trim()) {
       setFormData({ ...formData, images: [...formData.images, newImageUrl.trim()] });
       setNewImageUrl('');
@@ -153,15 +318,31 @@ export default function ProductsNew() {
     setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
   };
 
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    const newImages = [...formData.images];
+    const [movedImage] = newImages.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, movedImage);
+    setFormData({ ...formData, images: newImages });
+  };
+
   const handleSubmit = async () => {
     if (!formData.name_uz || !formData.name_ru) {
       toast({ variant: 'destructive', title: 'Xatolik', description: 'Mahsulot nomini kiriting' });
       return;
     }
 
+    const slug = formData.slug || generateSlug(formData.name_uz);
+
+    const isUnique = await checkSlugUnique(slug, selectedProduct?.id);
+    if (!isUnique) {
+      setSlugError('Bu slug allaqachon mavjud');
+      return;
+    }
+
     const productData = {
-      name_uz: formData.name_uz,
-      name_ru: formData.name_ru,
+      name_uz: formData.name_uz.trim(),
+      name_ru: formData.name_ru.trim(),
+      slug,
       description_uz: formData.description_uz || null,
       description_ru: formData.description_ru || null,
       full_description_uz: formData.full_description_uz || null,
@@ -177,6 +358,13 @@ export default function ProductsNew() {
       in_stock: formData.in_stock,
       is_featured: formData.is_featured,
       is_active: formData.is_active,
+      meta_title_uz: formData.meta_title_uz || null,
+      meta_title_ru: formData.meta_title_ru || null,
+      meta_description_uz: formData.meta_description_uz || null,
+      meta_description_ru: formData.meta_description_ru || null,
+      meta_keywords: formData.meta_keywords || null,
+      is_indexed: formData.is_indexed,
+      is_followed: formData.is_followed,
     };
 
     try {
@@ -193,7 +381,11 @@ export default function ProductsNew() {
       setDialogOpen(false);
       fetchData();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+      if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
+        setSlugError('Bu slug allaqachon mavjud');
+      } else {
+        toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+      }
     }
   };
 
@@ -203,13 +395,54 @@ export default function ProductsNew() {
     try {
       const { error } = await supabase.from('products').delete().eq('id', selectedProduct.id);
       if (error) throw error;
-      toast({ title: 'Muvaffaqiyat', description: 'Mahsulot o\'chirildi' });
+      toast({ title: 'Muvaffaqiyat', description: "Mahsulot o'chirildi" });
       setDeleteDialogOpen(false);
       fetchData();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
     }
   };
+
+  const toggleFeatured = async (product: Product) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_featured: !product.is_featured })
+        .eq('id', product.id);
+
+      if (error) throw error;
+      fetchData();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+    }
+  };
+
+  const getSeoStatus = (product: Product) => {
+    const hasTitle = product.meta_title_uz || product.meta_title_ru;
+    const hasDescription = product.meta_description_uz || product.meta_description_ru;
+    
+    if (hasTitle && hasDescription) return { status: 'complete', label: 'SEO tayyor' };
+    if (hasTitle || hasDescription) return { status: 'partial', label: 'SEO qisman' };
+    return { status: 'missing', label: 'SEO yoq' };
+  };
+
+  // Filter products
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = !searchQuery || 
+      product.name_uz.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.name_ru.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.slug && product.slug.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
+    
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' && product.is_active) ||
+      (statusFilter === 'inactive' && !product.is_active) ||
+      (statusFilter === 'featured' && product.is_featured) ||
+      (statusFilter === 'out_of_stock' && !product.in_stock);
+
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   if (loading) {
     return (
@@ -221,98 +454,186 @@ export default function ProductsNew() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Mahsulotlar</h1>
           <p className="text-muted-foreground">Barcha mahsulotlarni boshqaring</p>
         </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yangi mahsulot
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={fetchData}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Yangilash
+          </Button>
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" />
+            Yangi mahsulot
+          </Button>
+        </div>
       </div>
 
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Barcha mahsulotlar ({products.length})</CardTitle>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Mahsulot nomi yoki slug bo'yicha qidirish..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Toifa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Barcha toifalar</SelectItem>
+                {categories.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {language === 'uz' ? cat.name_uz : cat.name_ru}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Barchasi</SelectItem>
+                <SelectItem value="active">Faol</SelectItem>
+                <SelectItem value="inactive">Nofaol</SelectItem>
+                <SelectItem value="featured">Tanlangan</SelectItem>
+                <SelectItem value="out_of_stock">Tugagan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Products Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <span>Barcha mahsulotlar ({filteredProducts.length})</span>
+            <div className="flex gap-2">
+              <Badge variant="outline">{products.filter(p => p.is_active).length} faol</Badge>
+              <Badge variant="secondary">{products.filter(p => p.is_featured).length} tanlangan</Badge>
+            </div>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Rasm</TableHead>
+                <TableHead className="w-16">Rasm</TableHead>
                 <TableHead>Nomi</TableHead>
                 <TableHead>Toifa</TableHead>
                 <TableHead>Narxi</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>SEO</TableHead>
                 <TableHead className="text-right">Amallar</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    {product.images?.[0] ? (
-                      <img src={product.images[0]} alt={product.name_uz} className="h-12 w-12 object-cover rounded" />
-                    ) : (
-                      <div className="h-12 w-12 bg-muted rounded flex items-center justify-center">
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{language === 'uz' ? product.name_uz : product.name_ru}</p>
-                      {product.is_featured && <Badge variant="secondary" className="mt-1">Tanlangan</Badge>}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getCategoryName(product.category_id)}</TableCell>
-                  <TableCell>
-                    {product.is_negotiable ? (
-                      <Badge variant="outline">Kelishiladi</Badge>
-                    ) : (
-                      formatPrice(product.price)
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Faol' : 'Nofaol'}
-                      </Badge>
-                      {product.in_stock ? (
-                        <Badge variant="outline" className="text-green-600">Mavjud</Badge>
+              {filteredProducts.map((product) => {
+                const seoStatus = getSeoStatus(product);
+                return (
+                  <TableRow key={product.id}>
+                    <TableCell>
+                      {product.images?.[0] ? (
+                        <img src={product.images[0]} alt={product.name_uz} className="h-12 w-12 object-cover rounded-lg border" />
                       ) : (
-                        <Badge variant="destructive">Tugagan</Badge>
+                        <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
                       )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => { setSelectedProduct(product); setPreviewDialogOpen(true); }}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{language === 'uz' ? product.name_uz : product.name_ru}</p>
+                        {product.slug && (
+                          <code className="text-xs text-muted-foreground">/{product.slug}</code>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getCategoryName(product.category_id)}</TableCell>
+                    <TableCell>
+                      {product.is_negotiable ? (
+                        <Badge variant="outline">Kelishiladi</Badge>
+                      ) : (
+                        <div>
+                          <p className="font-medium">{formatPrice(product.price)}</p>
+                          {product.original_price && product.original_price > (product.price || 0) && (
+                            <p className="text-xs text-muted-foreground line-through">
+                              {formatPrice(product.original_price)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                          {product.is_active ? 'Faol' : 'Nofaol'}
+                        </Badge>
+                        {product.in_stock ? (
+                          <Badge variant="outline" className="text-green-600 border-green-200">Mavjud</Badge>
+                        ) : (
+                          <Badge variant="destructive">Tugagan</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={seoStatus.status === 'complete' ? 'default' : seoStatus.status === 'partial' ? 'secondary' : 'outline'}
+                        className={seoStatus.status === 'missing' ? 'text-muted-foreground' : ''}
                       >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(product)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => { setSelectedProduct(product); setDeleteDialogOpen(true); }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {products.length === 0 && (
+                        {seoStatus.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => toggleFeatured(product)}
+                          title={product.is_featured ? "Tanlanganlardan olib tashlash" : "Tanlanganlarga qo'shish"}
+                        >
+                          <Star className={`h-4 w-4 ${product.is_featured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => { setSelectedProduct(product); setPreviewDialogOpen(true); }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(product)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => { setSelectedProduct(product); setDeleteDialogOpen(true); }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {filteredProducts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Mahsulotlar topilmadi
+                  <TableCell colSpan={7} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-2">
+                      <Package className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-muted-foreground">Mahsulotlar topilmadi</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -323,26 +644,31 @@ export default function ProductsNew() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedProduct ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot'}</DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="basic">Asosiy</TabsTrigger>
               <TabsTrigger value="description">Tavsif</TabsTrigger>
               <TabsTrigger value="images">Rasmlar</TabsTrigger>
               <TabsTrigger value="attributes">Xususiyatlar</TabsTrigger>
+              <TabsTrigger value="seo" className="gap-1">
+                <Globe className="h-3 w-3" />
+                SEO
+              </TabsTrigger>
             </TabsList>
 
+            {/* Basic Tab */}
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nomi (UZ) *</Label>
                   <Input
                     value={formData.name_uz}
-                    onChange={(e) => setFormData({ ...formData, name_uz: e.target.value })}
+                    onChange={(e) => handleNameChange(e.target.value, 'name_uz')}
                     placeholder="O'zbek tilida"
                   />
                 </div>
@@ -350,10 +676,27 @@ export default function ProductsNew() {
                   <Label>Nomi (RU) *</Label>
                   <Input
                     value={formData.name_ru}
-                    onChange={(e) => setFormData({ ...formData, name_ru: e.target.value })}
+                    onChange={(e) => handleNameChange(e.target.value, 'name_ru')}
                     placeholder="На русском"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Slug (URL)</Label>
+                <Input
+                  value={formData.slug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="avtomatik yaratiladi"
+                  className={slugError ? 'border-destructive' : ''}
+                />
+                {slugError ? (
+                  <p className="text-sm text-destructive">{slugError}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    URL: /product/{formData.slug || 'slug'}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -396,7 +739,9 @@ export default function ProductsNew() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-6">
+              <Separator />
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={formData.is_negotiable}
@@ -428,6 +773,7 @@ export default function ProductsNew() {
               </div>
             </TabsContent>
 
+            {/* Description Tab */}
             <TabsContent value="description" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -436,6 +782,7 @@ export default function ProductsNew() {
                     value={formData.description_uz}
                     onChange={(e) => setFormData({ ...formData, description_uz: e.target.value })}
                     rows={3}
+                    placeholder="Mahsulot haqida qisqacha..."
                   />
                 </div>
                 <div className="space-y-2">
@@ -444,16 +791,19 @@ export default function ProductsNew() {
                     value={formData.description_ru}
                     onChange={(e) => setFormData({ ...formData, description_ru: e.target.value })}
                     rows={3}
+                    placeholder="Краткое описание..."
                   />
                 </div>
               </div>
+              <Separator />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>To'liq tavsif (UZ)</Label>
                   <Textarea
                     value={formData.full_description_uz}
                     onChange={(e) => setFormData({ ...formData, full_description_uz: e.target.value })}
-                    rows={5}
+                    rows={6}
+                    placeholder="Batafsil tavsif..."
                   />
                 </div>
                 <div className="space-y-2">
@@ -461,76 +811,266 @@ export default function ProductsNew() {
                   <Textarea
                     value={formData.full_description_ru}
                     onChange={(e) => setFormData({ ...formData, full_description_ru: e.target.value })}
-                    rows={5}
+                    rows={6}
+                    placeholder="Подробное описание..."
                   />
                 </div>
               </div>
             </TabsContent>
 
+            {/* Images Tab */}
             <TabsContent value="images" className="space-y-4 mt-4">
+              {/* Upload Section */}
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-muted-foreground mb-3">Rasmlarni yuklash uchun bosing</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? 'Yuklanmoqda...' : 'Rasm tanlash'}
+                </Button>
+              </div>
+
+              {/* URL Input */}
               <div className="flex gap-2">
                 <Input
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="Rasm URL manzilini kiriting"
+                  placeholder="Rasm URL manzilini kiriting..."
+                  className="flex-1"
                 />
-                <Button type="button" onClick={addImage}>Qo'shish</Button>
+                <Button variant="outline" onClick={addImageUrl} disabled={!newImageUrl.trim()}>
+                  Qo'shish
+                </Button>
               </div>
-              
-              <div className="grid grid-cols-4 gap-4">
-                {formData.images.map((img, index) => (
-                  <div key={index} className="relative group">
-                    <img src={img} alt="" className="w-full h-24 object-cover rounded" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+
+              {/* Images Grid */}
+              {formData.images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {formData.images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIi8+PC9zdmc+';
+                        }}
+                      />
+                      {index === 0 && (
+                        <Badge className="absolute top-2 left-2" variant="secondary">Asosiy</Badge>
+                      )}
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {index > 0 && (
+                          <Button 
+                            variant="secondary" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => moveImage(index, index - 1)}
+                          >
+                            <GripVertical className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-6 w-6"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {formData.images.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">
+                  Hech qanday rasm qo'shilmagan
+                </p>
+              )}
             </TabsContent>
 
+            {/* Attributes Tab */}
             <TabsContent value="attributes" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label>Materiallar (vergul bilan ajrating)</Label>
-                <Input
-                  value={formData.materials}
-                  onChange={(e) => setFormData({ ...formData, materials: e.target.value })}
-                  placeholder="Yog'och, MDF, Metall"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>O'lchamlar (vergul bilan ajrating)</Label>
+                <Label>O'lchamlar</Label>
                 <Input
                   value={formData.sizes}
                   onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
-                  placeholder="160x200, 180x200, 200x200"
+                  placeholder="Masalan: 200x100x80, 180x90x75 (vergul bilan ajrating)"
                 />
+                <p className="text-xs text-muted-foreground">Bir nechta o'lchamlarni vergul bilan ajrating</p>
               </div>
+
               <div className="space-y-2">
-                <Label>Ranglar (vergul bilan ajrating)</Label>
+                <Label>Ranglar</Label>
                 <Input
                   value={formData.colors}
                   onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
-                  placeholder="Oq, Qora, Jigarrang"
+                  placeholder="Masalan: Oq, Qora, Jigarrang (vergul bilan ajrating)"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Materiallar</Label>
+                <Input
+                  value={formData.materials}
+                  onChange={(e) => setFormData({ ...formData, materials: e.target.value })}
+                  placeholder="Masalan: Yog'och, Temir, Mato (vergul bilan ajrating)"
+                />
+              </div>
+
+              {/* Preview */}
+              {(formData.sizes || formData.colors || formData.materials) && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">Ko'rinishi:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.sizes && formData.sizes.split(',').filter(Boolean).map((size, i) => (
+                      <Badge key={`size-${i}`} variant="outline">{size.trim()}</Badge>
+                    ))}
+                    {formData.colors && formData.colors.split(',').filter(Boolean).map((color, i) => (
+                      <Badge key={`color-${i}`} variant="secondary">{color.trim()}</Badge>
+                    ))}
+                    {formData.materials && formData.materials.split(',').filter(Boolean).map((material, i) => (
+                      <Badge key={`material-${i}`}>{material.trim()}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* SEO Tab */}
+            <TabsContent value="seo" className="space-y-4 mt-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  SEO maydonlari bo'sh bo'lsa, mahsulot nomi avtomatik ishlatiladi.
+                </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Meta Title</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Meta Title (UZ)</Label>
+                    <Input
+                      value={formData.meta_title_uz}
+                      onChange={(e) => setFormData({ ...formData, meta_title_uz: e.target.value })}
+                      placeholder={formData.name_uz || 'Mahsulot nomi'}
+                      maxLength={60}
+                    />
+                    <p className="text-xs text-muted-foreground">{formData.meta_title_uz.length}/60</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Meta Title (RU)</Label>
+                    <Input
+                      value={formData.meta_title_ru}
+                      onChange={(e) => setFormData({ ...formData, meta_title_ru: e.target.value })}
+                      placeholder={formData.name_ru || 'Название товара'}
+                      maxLength={60}
+                    />
+                    <p className="text-xs text-muted-foreground">{formData.meta_title_ru.length}/60</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Meta Description</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Meta Description (UZ)</Label>
+                    <Textarea
+                      value={formData.meta_description_uz}
+                      onChange={(e) => setFormData({ ...formData, meta_description_uz: e.target.value })}
+                      placeholder="Mahsulot tavsifi..."
+                      maxLength={160}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">{formData.meta_description_uz.length}/160</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Meta Description (RU)</Label>
+                    <Textarea
+                      value={formData.meta_description_ru}
+                      onChange={(e) => setFormData({ ...formData, meta_description_ru: e.target.value })}
+                      placeholder="Описание товара..."
+                      maxLength={160}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">{formData.meta_description_ru.length}/160</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Meta Keywords</Label>
+                <Input
+                  value={formData.meta_keywords}
+                  onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+                  placeholder="mebel, divan, yotoq..."
+                />
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={formData.is_indexed}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_indexed: checked })}
+                  />
+                  <div>
+                    <Label>Indexlash</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.is_indexed ? 'Google indeksida' : 'Noindex'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={formData.is_followed}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_followed: checked })}
+                  />
+                  <div>
+                    <Label>Follow</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {formData.is_followed ? 'Havolalar kuzatiladi' : 'Nofollow'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Bekor qilish</Button>
-            <Button onClick={handleSubmit}>{selectedProduct ? 'Saqlash' : 'Yaratish'}</Button>
+            <Button onClick={handleSubmit} disabled={!!slugError}>
+              {selectedProduct ? 'Saqlash' : 'Yaratish'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Mahsulot ko'rinishi</DialogTitle>
           </DialogHeader>
@@ -544,15 +1084,26 @@ export default function ProductsNew() {
                 />
               )}
               <div>
-                <h3 className="text-xl font-bold">{selectedProduct.name_uz}</h3>
+                <h2 className="text-xl font-bold">{selectedProduct.name_uz}</h2>
                 <p className="text-muted-foreground">{selectedProduct.name_ru}</p>
               </div>
-              <div className="text-2xl font-bold text-primary">
-                {selectedProduct.is_negotiable ? 'Kelishiladi' : formatPrice(selectedProduct.price)}
-              </div>
               {selectedProduct.description_uz && (
-                <p className="text-muted-foreground">{selectedProduct.description_uz}</p>
+                <p>{selectedProduct.description_uz}</p>
               )}
+              <div className="flex gap-2 flex-wrap">
+                {selectedProduct.sizes?.map((size, i) => (
+                  <Badge key={i} variant="outline">{size}</Badge>
+                ))}
+                {selectedProduct.colors?.map((color, i) => (
+                  <Badge key={i} variant="secondary">{color}</Badge>
+                ))}
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-2xl font-bold">{formatPrice(selectedProduct.price)}</span>
+                {selectedProduct.is_negotiable && (
+                  <Badge>Kelishiladi</Badge>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
@@ -565,6 +1116,7 @@ export default function ProductsNew() {
             <AlertDialogTitle>Mahsulotni o'chirish</AlertDialogTitle>
             <AlertDialogDescription>
               Haqiqatan ham "{selectedProduct?.name_uz}" mahsulotini o'chirmoqchimisiz?
+              Bu amalni qaytarib bo'lmaydi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

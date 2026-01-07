@@ -1,13 +1,21 @@
-import { useState } from 'react';
-import { ExternalLink, Eye, Pencil, Info, Play, Maximize2, Minimize2, RefreshCw, ArrowLeft, Smartphone, Monitor, Tablet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Eye, Pencil, Info, Play, Maximize2, Minimize2, RefreshCw, ArrowLeft, Smartphone, Monitor, Tablet, CheckCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { notifyIframeRefresh } from '@/hooks/useSiteContent';
 
 type ViewMode = 'cards' | 'editor';
 type DeviceSize = 'desktop' | 'tablet' | 'mobile';
+
+interface ContentUpdate {
+  key: string;
+  language: 'uz' | 'ru';
+  value: string;
+  timestamp: number;
+}
 
 export default function SiteContent() {
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -15,6 +23,38 @@ export default function SiteContent() {
   const [deviceSize, setDeviceSize] = useState<DeviceSize>('desktop');
   const [currentPath, setCurrentPath] = useState('/');
   const [iframeKey, setIframeKey] = useState(0);
+  const [recentUpdates, setRecentUpdates] = useState<ContentUpdate[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Listen for messages from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'content-update') {
+        console.log('Admin panel received update:', event.data);
+        setIsConnected(true);
+        
+        const update: ContentUpdate = {
+          key: event.data.key,
+          language: event.data.language,
+          value: event.data.value,
+          timestamp: event.data.timestamp,
+        };
+        
+        setRecentUpdates(prev => {
+          const newUpdates = [update, ...prev.filter(u => u.key !== update.key)].slice(0, 5);
+          return newUpdates;
+        });
+      }
+      
+      // Iframe loaded and ready
+      if (event.data?.type === 'iframe-ready') {
+        setIsConnected(true);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const handleOpenVisualEditor = () => {
     setViewMode('editor');
@@ -26,6 +66,7 @@ export default function SiteContent() {
 
   const refreshIframe = () => {
     setIframeKey(prev => prev + 1);
+    notifyIframeRefresh();
   };
 
   const getIframeSrc = () => {
@@ -38,6 +79,13 @@ export default function SiteContent() {
       case 'tablet': return 'max-w-[768px]';
       default: return 'w-full';
     }
+  };
+
+  const formatTime = (timestamp: number) => {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 5) return 'Hozir';
+    if (seconds < 60) return `${seconds} soniya oldin`;
+    return `${Math.floor(seconds / 60)} daqiqa oldin`;
   };
 
   const pages = [
@@ -69,6 +117,18 @@ export default function SiteContent() {
             </Button>
             <div className="h-6 w-px bg-border" />
             <span className="text-sm font-medium text-muted-foreground">Vizual tahrirlash</span>
+            
+            {/* Connection Status */}
+            <div className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs",
+              isConnected ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"
+            )}>
+              <span className={cn(
+                "h-2 w-2 rounded-full",
+                isConnected ? "bg-green-500 animate-pulse" : "bg-muted-foreground"
+              )} />
+              {isConnected ? "Ulangan" : "Kutilmoqda..."}
+            </div>
           </div>
 
           {/* Page Selector */}
@@ -146,26 +206,73 @@ export default function SiteContent() {
           </div>
         </div>
 
-        {/* Iframe Container */}
-        <div className="flex-1 bg-muted/50 overflow-hidden flex justify-center p-4">
-          <div className={cn(
-            "h-full bg-background rounded-lg shadow-2xl overflow-hidden transition-all duration-300",
-            getDeviceWidth()
-          )}>
-            <iframe
-              key={iframeKey}
-              src={getIframeSrc()}
-              className="w-full h-full border-0"
-              title="Site Preview"
-            />
+        <div className="flex-1 flex overflow-hidden">
+          {/* Iframe Container */}
+          <div className="flex-1 bg-muted/50 overflow-hidden flex justify-center p-4">
+            <div className={cn(
+              "h-full bg-background rounded-lg shadow-2xl overflow-hidden transition-all duration-300",
+              getDeviceWidth()
+            )}>
+              <iframe
+                key={iframeKey}
+                src={getIframeSrc()}
+                className="w-full h-full border-0"
+                title="Site Preview"
+                onLoad={() => setIsConnected(true)}
+              />
+            </div>
           </div>
+
+          {/* Recent Updates Sidebar */}
+          {recentUpdates.length > 0 && (
+            <div className="w-72 border-l bg-card p-4 overflow-y-auto">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                So'nggi o'zgarishlar
+              </h3>
+              <div className="space-y-2">
+                {recentUpdates.map((update, index) => (
+                  <div 
+                    key={`${update.key}-${update.timestamp}`}
+                    className={cn(
+                      "p-3 rounded-lg border transition-all",
+                      index === 0 ? "bg-green-500/5 border-green-500/20" : "bg-muted/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="text-xs font-mono text-muted-foreground truncate">
+                        {update.key}
+                      </span>
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/10 text-primary uppercase">
+                        {update.language}
+                      </span>
+                    </div>
+                    <p className="text-sm text-foreground line-clamp-2 mb-1">
+                      {update.value.substring(0, 100)}{update.value.length > 100 ? '...' : ''}
+                    </p>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                      {formatTime(update.timestamp)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status Bar */}
         <div className="flex items-center justify-between px-4 py-2 border-t bg-card text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            Tahrirlash rejimi yoqilgan
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              Tahrirlash rejimi yoqilgan
+            </div>
+            {recentUpdates.length > 0 && (
+              <span className="text-green-600">
+                {recentUpdates.length} ta o'zgarish saqlandi
+              </span>
+            )}
           </div>
           <span>{currentPath}</span>
         </div>
@@ -192,7 +299,7 @@ export default function SiteContent() {
         <AlertTitle>Yangi vizual tahrirlash tizimi</AlertTitle>
         <AlertDescription>
           Endi sayt kontentini to'g'ridan-to'g'ri shu yerda tahrirlashingiz mumkin. 
-          "Vizual tahrirlashni boshlash" tugmasini bosing.
+          Barcha o'zgarishlar realtime ko'rsatiladi.
         </AlertDescription>
       </Alert>
 
@@ -213,18 +320,18 @@ export default function SiteContent() {
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Shu sahifadan chiqmasdan sayt kontentini tahrirlashingiz mumkin. 
-              Barcha o'zgarishlar avtomatik saqlanadi.
+              Barcha o'zgarishlar avtomatik saqlanadi va realtime ko'rsatiladi.
             </p>
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Xususiyatlar:</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Desktop, planshet va mobil ko'rinishlar
+                  Realtime o'zgarishlar monitoring
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Barcha sahifalar o'rtasida almashish
+                  Desktop, planshet va mobil ko'rinishlar
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -263,13 +370,13 @@ export default function SiteContent() {
               tekshiring. Bu rejimda tahrirlash imkoniyati yo'q.
             </p>
             <div className="p-4 bg-muted rounded-lg">
-              <h4 className="font-medium text-sm mb-2">Tahrirlanadigan seksiyalar:</h4>
+              <h4 className="font-medium text-sm mb-2">Tahrirlanadigan sahifalar:</h4>
               <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-background rounded text-xs">Hero sarlavha</span>
-                <span className="px-2 py-1 bg-background rounded text-xs">Hero tavsif</span>
-                <span className="px-2 py-1 bg-background rounded text-xs">Aksiya</span>
-                <span className="px-2 py-1 bg-background rounded text-xs">Toifalar</span>
-                <span className="px-2 py-1 bg-background rounded text-xs">Footer</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Bosh sahifa</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Katalog</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Biz haqimizda</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Aloqa</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">FAQ</span>
               </div>
             </div>
             <Button variant="outline" asChild className="w-full">
@@ -313,7 +420,7 @@ export default function SiteContent() {
               </div>
               <h4 className="font-medium mb-1">Matnlarni o'zgartiring</h4>
               <p className="text-sm text-muted-foreground">
-                ✏️ ikonasini bosib matnni tahrirlang va saqlang
+                ✏️ ikonasini bosib matnni tahrirlang - o'ng panelda ko'ring
               </p>
             </div>
           </div>

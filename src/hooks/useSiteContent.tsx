@@ -12,19 +12,53 @@ interface ContentItem {
   section: string | null;
 }
 
+interface ContentUpdateEvent {
+  type: 'content-update';
+  key: string;
+  language: 'uz' | 'ru';
+  value: string;
+  timestamp: number;
+}
+
 interface SiteContentContextType {
   content: Record<string, ContentItem>;
   loading: boolean;
   getContent: (key: string, language: 'uz' | 'ru', fallback?: string) => string;
   updateContent: (key: string, language: 'uz' | 'ru', value: string) => Promise<boolean>;
   refreshContent: () => Promise<void>;
+  lastUpdate: ContentUpdateEvent | null;
 }
 
 const SiteContentContext = createContext<SiteContentContextType | undefined>(undefined);
 
+// Notify parent window about content updates (for iframe communication)
+const notifyParentWindow = (event: ContentUpdateEvent) => {
+  try {
+    // Check if we're in an iframe
+    if (window.parent !== window) {
+      window.parent.postMessage(event, '*');
+    }
+  } catch (error) {
+    console.log('Could not notify parent window:', error);
+  }
+};
+
+// Notify iframe about content sync request
+export const notifyIframeRefresh = () => {
+  try {
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'content-refresh' }, '*');
+    }
+  } catch (error) {
+    console.log('Could not notify iframe:', error);
+  }
+};
+
 export function SiteContentProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<Record<string, ContentItem>>({});
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<ContentUpdateEvent | null>(null);
   const { toast } = useToast();
 
   const fetchContent = useCallback(async () => {
@@ -49,6 +83,45 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchContent();
+  }, [fetchContent]);
+
+  // Listen for messages from parent (when in iframe) or from iframe (when parent)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Handle refresh request from parent
+      if (event.data?.type === 'content-refresh') {
+        console.log('Received refresh request from parent');
+        fetchContent();
+      }
+      
+      // Handle content update from iframe (when we're the parent/admin panel)
+      if (event.data?.type === 'content-update') {
+        console.log('Received content update from iframe:', event.data);
+        setLastUpdate(event.data as ContentUpdateEvent);
+        
+        // Update local content state
+        const { key, language, value } = event.data;
+        const updateField = language === 'uz' ? 'value_uz' : 'value_ru';
+        
+        setContent((prev) => ({
+          ...prev,
+          [key]: {
+            ...prev[key],
+            id: prev[key]?.id || key,
+            key,
+            [updateField]: value,
+            value_uz: language === 'uz' ? value : prev[key]?.value_uz || null,
+            value_ru: language === 'ru' ? value : prev[key]?.value_ru || null,
+            content_type: prev[key]?.content_type || 'text',
+            page: prev[key]?.page || null,
+            section: prev[key]?.section || null,
+          },
+        }));
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, [fetchContent]);
 
   const getContent = useCallback((key: string, language: 'uz' | 'ru', fallback: string = '') => {
@@ -101,6 +174,17 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
         },
       }));
 
+      // Notify parent window about the update (for iframe communication)
+      const updateEvent: ContentUpdateEvent = {
+        type: 'content-update',
+        key,
+        language,
+        value,
+        timestamp: Date.now(),
+      };
+      setLastUpdate(updateEvent);
+      notifyParentWindow(updateEvent);
+
       toast({ title: 'Saqlandi', description: 'Kontent muvaffaqiyatli yangilandi' });
       return true;
     } catch (error: any) {
@@ -116,7 +200,7 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
   }, [fetchContent]);
 
   return (
-    <SiteContentContext.Provider value={{ content, loading, getContent, updateContent, refreshContent }}>
+    <SiteContentContext.Provider value={{ content, loading, getContent, updateContent, refreshContent, lastUpdate }}>
       {children}
     </SiteContentContext.Provider>
   );

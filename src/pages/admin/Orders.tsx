@@ -54,6 +54,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OrderItem {
   id: string;
@@ -116,11 +117,12 @@ export default function Orders() {
   const [telegramSettings, setTelegramSettings] = useState<TelegramSettings | null>(null);
   const [sendingTelegram, setSendingTelegram] = useState(false);
   const { toast } = useToast();
+  const { user, isSeller, isAdmin } = useAuth();
 
   useEffect(() => {
     fetchOrders();
     fetchTelegramSettings();
-  }, [statusFilter, dateFrom, dateTo]);
+  }, [statusFilter, dateFrom, dateTo, user]);
 
   const fetchTelegramSettings = async () => {
     try {
@@ -149,6 +151,11 @@ export default function Orders() {
         .from('orders')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Seller can only see their own orders
+      if (isSeller && !isAdmin && user) {
+        query = query.eq('created_by_user_id', user.id);
+      }
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);

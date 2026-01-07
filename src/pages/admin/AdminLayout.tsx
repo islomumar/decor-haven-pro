@@ -33,7 +33,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -42,9 +42,30 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Mobile header - fixed */}
+      <header className="sticky top-0 z-30 h-16 bg-white border-b flex items-center justify-between px-4 lg:hidden">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <Link to="/admin" className="font-serif text-lg font-bold text-primary">
+          Admin Panel
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
+
+      {/* Mobile sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform lg:translate-x-0 lg:static",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform lg:hidden",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-16 px-6 border-b">
@@ -54,7 +75,6 @@ export default function AdminLayout() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="lg:hidden"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -92,36 +112,73 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top header */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-6">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+      {/* Desktop layout */}
+      <div className="hidden lg:flex">
+        {/* Desktop sidebar - not fixed, scrolls with page */}
+        <aside className="w-64 bg-white border-r min-h-screen">
+          <div className="sticky top-0 bg-white">
+            <div className="flex items-center h-16 px-6 border-b">
+              <Link to="/admin" className="font-serif text-xl font-bold text-primary">
+                Admin Panel
+              </Link>
+            </div>
 
-          <div className="flex-1" />
+            <nav className="p-4 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.url}
+                  to={item.url}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                    isActive(item.url)
+                      ? "bg-primary text-primary-foreground"
+                      : "text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
 
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
-              A
+            <div className="p-4 border-t">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-3"
+                onClick={() => navigate('/')}
+              >
+                <LogOut className="h-4 w-4" />
+                Saytga qaytish
+              </Button>
             </div>
           </div>
-        </header>
+        </aside>
 
-        {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          <Outlet />
-        </main>
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Desktop top header */}
+          <header className="sticky top-0 z-20 h-16 bg-white border-b flex items-center justify-end px-6">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+              </Button>
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                A
+              </div>
+            </div>
+          </header>
+
+          {/* Page content */}
+          <main className="p-6">
+            <Outlet />
+          </main>
+        </div>
       </div>
+
+      {/* Mobile content */}
+      <main className="p-4 lg:hidden">
+        <Outlet />
+      </main>
     </div>
   );
 }

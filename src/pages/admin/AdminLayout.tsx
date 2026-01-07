@@ -9,7 +9,12 @@ import {
   X,
   LogOut,
   Bell,
-  Palette
+  Palette,
+  FolderTree,
+  Users,
+  Shield,
+  FileText,
+  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,9 +22,14 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Buyurtmalar', url: '/admin/orders', icon: ShoppingCart },
+  { title: 'Toifalar', url: '/admin/categories', icon: FolderTree },
   { title: 'Mahsulotlar', url: '/admin/products', icon: Package },
+  { title: 'Mijozlar', url: '/admin/customers', icon: Users },
+  { title: 'Sayt kontenti', url: '/admin/content', icon: FileText },
   { title: 'Mavzular', url: '/admin/themes', icon: Palette },
-  { title: 'Sozlamalar', url: '/admin/settings', icon: Settings },
+  { title: 'Adminlar', url: '/admin/admins', icon: Shield },
+  { title: 'Telegram', url: '/admin/settings', icon: Settings },
+  { title: 'Tizim sozlamalari', url: '/admin/system', icon: Settings2 },
 ];
 
 export default function AdminLayout() {

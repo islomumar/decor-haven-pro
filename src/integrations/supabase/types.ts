@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          image: string | null
+          is_active: boolean | null
+          name_ru: string
+          name_uz: string
+          slug: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name_ru: string
+          name_uz: string
+          slug: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          name_ru?: string
+          name_uz?: string
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          notes: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          notes?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          notes?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -58,6 +124,7 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          customer_id: string | null
           customer_message: string | null
           customer_name: string
           customer_phone: string
@@ -69,6 +136,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_id?: string | null
           customer_message?: string | null
           customer_name: string
           customer_phone: string
@@ -80,6 +148,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_id?: string | null
           customer_message?: string | null
           customer_name?: string
           customer_phone?: string
@@ -89,7 +158,95 @@ export type Database = {
           total_price?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          colors: string[] | null
+          created_at: string
+          description_ru: string | null
+          description_uz: string | null
+          full_description_ru: string | null
+          full_description_uz: string | null
+          id: string
+          images: string[] | null
+          in_stock: boolean | null
+          is_active: boolean | null
+          is_featured: boolean | null
+          is_negotiable: boolean | null
+          materials: string[] | null
+          name_ru: string
+          name_uz: string
+          original_price: number | null
+          price: number | null
+          sizes: string[] | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description_ru?: string | null
+          description_uz?: string | null
+          full_description_ru?: string | null
+          full_description_uz?: string | null
+          id?: string
+          images?: string[] | null
+          in_stock?: boolean | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_negotiable?: boolean | null
+          materials?: string[] | null
+          name_ru: string
+          name_uz: string
+          original_price?: number | null
+          price?: number | null
+          sizes?: string[] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          colors?: string[] | null
+          created_at?: string
+          description_ru?: string | null
+          description_uz?: string | null
+          full_description_ru?: string | null
+          full_description_uz?: string | null
+          id?: string
+          images?: string[] | null
+          in_stock?: boolean | null
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          is_negotiable?: boolean | null
+          materials?: string[] | null
+          name_ru?: string
+          name_uz?: string
+          original_price?: number | null
+          price?: number | null
+          sizes?: string[] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
@@ -112,6 +269,96 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string | null
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          id: string
+          key: string
+          page: string | null
+          section: string | null
+          updated_at: string
+          value_ru: string | null
+          value_uz: string | null
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          key: string
+          page?: string | null
+          section?: string | null
+          updated_at?: string
+          value_ru?: string | null
+          value_uz?: string | null
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          page?: string | null
+          section?: string | null
+          updated_at?: string
+          value_ru?: string | null
+          value_uz?: string | null
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          address_ru: string | null
+          address_uz: string | null
+          contact_phone: string | null
+          created_at: string
+          default_language: string | null
+          id: string
+          languages_enabled: string[] | null
+          logo_url: string | null
+          seo_description: string | null
+          seo_title: string | null
+          site_name: string | null
+          updated_at: string
+          whatsapp_number: string | null
+          working_hours_ru: string | null
+          working_hours_uz: string | null
+        }
+        Insert: {
+          address_ru?: string | null
+          address_uz?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_language?: string | null
+          id?: string
+          languages_enabled?: string[] | null
+          logo_url?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          site_name?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+          working_hours_ru?: string | null
+          working_hours_uz?: string | null
+        }
+        Update: {
+          address_ru?: string | null
+          address_uz?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          default_language?: string | null
+          id?: string
+          languages_enabled?: string[] | null
+          logo_url?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          site_name?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+          working_hours_ru?: string | null
+          working_hours_uz?: string | null
         }
         Relationships: []
       }
@@ -157,15 +404,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -292,6 +566,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "editor"],
+    },
   },
 } as const

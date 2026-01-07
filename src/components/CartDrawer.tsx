@@ -17,15 +17,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { language, t } = useLanguage();
   const { settings } = useSystemSettings();
 
-  // Lock body scroll when open
+  // Lock body scroll when open, restore when closed
   useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = 'auto';
     }
+    
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = originalOverflow || 'auto';
     };
   }, [isOpen]);
 

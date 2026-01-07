@@ -203,13 +203,21 @@ export type Database = {
           in_stock: boolean | null
           is_active: boolean | null
           is_featured: boolean | null
+          is_followed: boolean | null
+          is_indexed: boolean | null
           is_negotiable: boolean | null
           materials: string[] | null
+          meta_description_ru: string | null
+          meta_description_uz: string | null
+          meta_keywords: string | null
+          meta_title_ru: string | null
+          meta_title_uz: string | null
           name_ru: string
           name_uz: string
           original_price: number | null
           price: number | null
           sizes: string[] | null
+          slug: string | null
           sort_order: number | null
           updated_at: string
         }
@@ -226,13 +234,21 @@ export type Database = {
           in_stock?: boolean | null
           is_active?: boolean | null
           is_featured?: boolean | null
+          is_followed?: boolean | null
+          is_indexed?: boolean | null
           is_negotiable?: boolean | null
           materials?: string[] | null
+          meta_description_ru?: string | null
+          meta_description_uz?: string | null
+          meta_keywords?: string | null
+          meta_title_ru?: string | null
+          meta_title_uz?: string | null
           name_ru: string
           name_uz: string
           original_price?: number | null
           price?: number | null
           sizes?: string[] | null
+          slug?: string | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -249,13 +265,21 @@ export type Database = {
           in_stock?: boolean | null
           is_active?: boolean | null
           is_featured?: boolean | null
+          is_followed?: boolean | null
+          is_indexed?: boolean | null
           is_negotiable?: boolean | null
           materials?: string[] | null
+          meta_description_ru?: string | null
+          meta_description_uz?: string | null
+          meta_keywords?: string | null
+          meta_title_ru?: string | null
+          meta_title_uz?: string | null
           name_ru?: string
           name_uz?: string
           original_price?: number | null
           price?: number | null
           sizes?: string[] | null
+          slug?: string | null
           sort_order?: number | null
           updated_at?: string
         }

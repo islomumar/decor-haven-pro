@@ -396,6 +396,7 @@ export type Database = {
           id: string
           languages_enabled: string[] | null
           logo_url: string | null
+          primary_domain: string | null
           seo_description: string | null
           seo_title: string | null
           site_name: string | null
@@ -413,6 +414,7 @@ export type Database = {
           id?: string
           languages_enabled?: string[] | null
           logo_url?: string | null
+          primary_domain?: string | null
           seo_description?: string | null
           seo_title?: string | null
           site_name?: string | null
@@ -430,6 +432,7 @@ export type Database = {
           id?: string
           languages_enabled?: string[] | null
           logo_url?: string | null
+          primary_domain?: string | null
           seo_description?: string | null
           seo_title?: string | null
           site_name?: string | null

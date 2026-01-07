@@ -33,7 +33,7 @@ export default function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16">
+      <div id="hero" className="min-h-screen flex items-center justify-center py-16">
         <div className="text-center">
           <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h1 className="font-serif text-2xl font-bold mb-2">{t.cart.empty}</h1>
@@ -47,7 +47,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen py-16">
+    <div id="hero" className="min-h-screen py-16">
       <div className="container mx-auto px-4">
         <h1 className="font-serif text-3xl font-bold mb-8">{t.cart.title}</h1>
 

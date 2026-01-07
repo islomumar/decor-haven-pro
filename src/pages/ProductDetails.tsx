@@ -44,7 +44,7 @@ export default function ProductDetails() {
   );
 
   return (
-    <div className="min-h-screen py-8">
+    <div id="hero" className="min-h-screen py-8">
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
         <Button asChild variant="ghost" className="mb-6 gap-2">

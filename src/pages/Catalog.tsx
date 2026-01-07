@@ -186,7 +186,7 @@ export default function Catalog() {
   );
 
   return (
-    <div className="min-h-screen py-8">
+    <div id="hero" className="min-h-screen py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">

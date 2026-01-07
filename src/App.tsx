@@ -17,6 +17,7 @@ import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditorPanel } from "@/components/editor/EditorPanel";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import ProductDetails from "./pages/ProductDetails";
@@ -54,6 +55,7 @@ const App = () => (
                     <Toaster />
                     <Sonner />
                     <BrowserRouter>
+                      <ScrollToTop />
                       <Routes>
                         {/* Admin Auth */}
                         <Route path="/admin/auth" element={<AdminAuth />} />

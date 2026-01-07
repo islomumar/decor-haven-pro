@@ -15,6 +15,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { EditModeToggle } from "@/components/EditModeToggle";
+import { EditorPanel } from "@/components/editor/EditorPanel";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
@@ -130,6 +131,7 @@ const App = () => (
                           <Footer />
                           <WhatsAppButton />
                           <EditModeToggle />
+                          <EditorPanel />
                         </div>
                         } />
                       </Routes>

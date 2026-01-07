@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { totalItems } = useCart();
   const location = useLocation();
+  const { settings, getSiteName, getLogo } = useSystemSettings();
 
   const navLinks = [
     { href: '/', label: t.nav.home },
@@ -21,16 +23,38 @@ export function Header() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const siteName = getSiteName();
+  const logoUrl = getLogo();
+  const contactPhone = settings?.contact_phone || '+998 90 123 45 67';
+
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-serif font-bold text-xl">M</span>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={siteName} 
+                className="h-10 max-w-[160px] object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div className={`flex items-center gap-2 ${logoUrl ? 'hidden' : ''}`}>
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-serif font-bold text-xl">
+                  {siteName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="font-serif text-xl font-bold text-foreground hidden sm:block">
+                {siteName}
+              </span>
             </div>
-            <span className="font-serif text-xl font-bold text-foreground hidden sm:block">Mebel Usta</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -71,9 +95,9 @@ export function Header() {
             </div>
 
             {/* Phone */}
-            <a href="tel:+998901234567" className="hidden md:flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary">
+            <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="hidden md:flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary">
               <Phone className="w-4 h-4" />
-              <span>+998 90 123 45 67</span>
+              <span>{contactPhone}</span>
             </a>
 
             {/* Cart */}
@@ -111,8 +135,8 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
-              <a href="tel:+998901234567" className="px-4 py-3 flex items-center gap-2 text-sm font-medium text-foreground">
-                <Phone className="w-4 h-4" /> +998 90 123 45 67
+              <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="px-4 py-3 flex items-center gap-2 text-sm font-medium text-foreground">
+                <Phone className="w-4 h-4" /> {contactPhone}
               </a>
             </div>
           </nav>

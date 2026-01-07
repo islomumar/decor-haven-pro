@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,30 +16,36 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
-    // Use the request origin or a default
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch primary domain from system_settings
+    const { data: settingsData } = await supabaseClient
+      .from('system_settings')
+      .select('primary_domain')
+      .limit(1)
+      .single();
+
+    // Use primary_domain from settings, or fallback to request origin
     const url = new URL(req.url);
-    const baseUrl = `${url.protocol}//${url.host}`.replace('/functions/v1/sitemap', '');
-    const siteUrl = baseUrl.includes('supabase') 
-      ? 'https://your-domain.com' // Replace with actual domain in production
-      : baseUrl;
+    const fallbackUrl = `${url.protocol}//${url.host}`.replace('/functions/v1/sitemap', '');
+    const siteUrl = settingsData?.primary_domain || 
+      (fallbackUrl.includes('supabase') ? 'https://example.com' : fallbackUrl);
 
     // Fetch active categories
-    const categoriesResponse = await fetch(`${supabaseUrl}/rest/v1/categories?is_active=eq.true&is_indexed=eq.true&order=sort_order.asc`, {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-    });
-    const categories = await categoriesResponse.json();
+    const { data: categories } = await supabaseClient
+      .from('categories')
+      .select('slug, updated_at')
+      .eq('is_active', true)
+      .eq('is_indexed', true)
+      .order('sort_order', { ascending: true });
 
-    // Fetch active products
-    const productsResponse = await fetch(`${supabaseUrl}/rest/v1/products?is_active=eq.true&order=created_at.desc`, {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-    });
-    const products = await productsResponse.json();
+    // Fetch active and indexed products
+    const { data: products } = await supabaseClient
+      .from('products')
+      .select('id, slug, updated_at')
+      .eq('is_active', true)
+      .eq('is_indexed', true)
+      .order('created_at', { ascending: false });
 
     // Generate sitemap XML
     const now = new Date().toISOString();
@@ -107,9 +114,10 @@ serve(async (req) => {
   <!-- Products -->`;
       for (const product of products) {
         const lastmod = product.updated_at || now;
+        const productUrl = product.slug || product.id;
         xml += `
   <url>
-    <loc>${siteUrl}/product/${product.id}</loc>
+    <loc>${siteUrl}/product/${productUrl}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

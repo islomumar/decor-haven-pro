@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 interface SEOProps {
   title?: string;
@@ -23,11 +24,15 @@ export function useSEO({
   ogDescription,
   ogImage,
 }: SEOProps) {
+  const { settings, getSEOTitle, getSEODescription, getPrimaryDomain } = useSystemSettings();
+
   useEffect(() => {
-    // Update title
-    if (title) {
-      document.title = title;
-    }
+    // Generate title with fallback to system settings
+    const pageTitle = title 
+      ? getSEOTitle(title) 
+      : (settings?.seo_title || settings?.site_name || 'Mebel Store');
+    
+    document.title = pageTitle;
 
     // Helper to update or create meta tag
     const updateMeta = (name: string, content: string, isProperty = false) => {
@@ -46,9 +51,10 @@ export function useSEO({
       }
     };
 
-    // Update meta tags
-    if (description) {
-      updateMeta('description', description);
+    // Use provided description or fallback to system settings
+    const metaDescription = description || getSEODescription();
+    if (metaDescription) {
+      updateMeta('description', metaDescription);
     }
 
     if (keywords) {
@@ -62,29 +68,32 @@ export function useSEO({
     ].join(', ');
     updateMeta('robots', robotsContent);
 
-    // Canonical URL
+    // Canonical URL - use primary domain from settings
     let canonicalLink = document.querySelector('link[rel="canonical"]');
-    if (canonical) {
-      if (!canonicalLink) {
-        canonicalLink = document.createElement('link');
-        canonicalLink.setAttribute('rel', 'canonical');
-        document.head.appendChild(canonicalLink);
-      }
-      canonicalLink.setAttribute('href', canonical);
+    const baseUrl = getPrimaryDomain();
+    const canonicalUrl = canonical || (baseUrl + window.location.pathname);
+    
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
     }
+    canonicalLink.setAttribute('href', canonicalUrl);
 
     // Open Graph tags
-    updateMeta('og:title', ogTitle || title || '', true);
-    updateMeta('og:description', ogDescription || description || '', true);
+    updateMeta('og:title', ogTitle || pageTitle, true);
+    updateMeta('og:description', ogDescription || metaDescription, true);
+    updateMeta('og:url', canonicalUrl, true);
     if (ogImage) {
       updateMeta('og:image', ogImage, true);
     }
     updateMeta('og:type', 'website', true);
+    updateMeta('og:site_name', settings?.site_name || 'Mebel Store', true);
 
     // Twitter Card
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', ogTitle || title || '');
-    updateMeta('twitter:description', ogDescription || description || '');
+    updateMeta('twitter:title', ogTitle || pageTitle);
+    updateMeta('twitter:description', ogDescription || metaDescription);
     if (ogImage) {
       updateMeta('twitter:image', ogImage);
     }
@@ -93,7 +102,7 @@ export function useSEO({
     return () => {
       // Don't remove meta tags on cleanup, just leave them for the next page
     };
-  }, [title, description, keywords, noindex, nofollow, canonical, ogTitle, ogDescription, ogImage]);
+  }, [title, description, keywords, noindex, nofollow, canonical, ogTitle, ogDescription, ogImage, settings]);
 }
 
 export default useSEO;

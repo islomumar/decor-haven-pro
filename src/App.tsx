@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import { EditModeProvider } from "@/hooks/useEditMode";
 import { SiteContentProvider } from "@/hooks/useSiteContent";
+import { SystemSettingsProvider } from "@/hooks/useSystemSettings";
 import { ThemeLoader } from "@/components/ThemeLoader";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -42,11 +43,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <ThemeLoader>
-        <LanguageProvider>
-          <CartProvider>
-            <AuthProvider>
-              <SiteContentProvider>
-                <EditModeProvider>
+        <SystemSettingsProvider>
+          <LanguageProvider>
+            <CartProvider>
+              <AuthProvider>
+                <SiteContentProvider>
+                  <EditModeProvider>
                   <TooltipProvider>
                     <Toaster />
                     <Sonner />
@@ -133,11 +135,12 @@ const App = () => (
                       </Routes>
                     </BrowserRouter>
                   </TooltipProvider>
-                </EditModeProvider>
-              </SiteContentProvider>
-            </AuthProvider>
-          </CartProvider>
-        </LanguageProvider>
+                  </EditModeProvider>
+                </SiteContentProvider>
+              </AuthProvider>
+            </CartProvider>
+          </LanguageProvider>
+        </SystemSettingsProvider>
       </ThemeLoader>
     </ThemeProvider>
   </QueryClientProvider>

@@ -100,43 +100,31 @@ export function OrderForm({ open, onOpenChange }: OrderFormProps) {
     setLoading(true);
 
     try {
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert([{
-          order_number: '',
-          customer_name: formData.name,
-          customer_phone: formData.phone,
-          customer_message: formData.message || null,
-          total_price: totalPrice,
-          status: 'new',
-        }])
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
+      // Prepare order items (only IDs and quantities - prices validated server-side)
       const orderItems = items.map(item => ({
-        order_id: order.id,
         product_id: item.product.id,
-        product_name_snapshot: language === 'uz' ? item.product.name_uz : item.product.name_ru,
+        quantity: item.quantity,
         selected_options: {
           size: item.selectedSize,
           color: item.selectedColor,
         },
-        quantity: item.quantity,
-        price_snapshot: item.product.price,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      // Call edge function for server-side price validation
+      const { data: orderResult, error: orderError } = await supabase.functions.invoke('create-order', {
+        body: {
+          customer_name: formData.name.trim(),
+          customer_phone: formData.phone.replace(/\s/g, ''),
+          customer_message: formData.message || undefined,
+          items: orderItems,
+        },
+      });
 
-      if (itemsError) throw itemsError;
-
-      // Send Telegram notification
-      await sendTelegramNotification(order, orderItems);
+      if (orderError) throw orderError;
+      
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Buyurtma yaratishda xatolik');
+      }
 
       toast({
         title: language === 'uz' ? 'Muvaffaqiyat!' : 'Успешно!',
@@ -146,63 +134,15 @@ export function OrderForm({ open, onOpenChange }: OrderFormProps) {
       clearCart();
       onOpenChange(false);
       setFormData({ name: '', phone: '', message: '' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Order error:', error);
       toast({
         title: language === 'uz' ? 'Xatolik' : 'Ошибка',
-        description: text.error,
+        description: error.message || text.error,
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const sendTelegramNotification = async (order: any, orderItems: any[]) => {
-    try {
-      // Get Telegram settings
-      const { data: settings } = await supabase
-        .from('settings')
-        .select('*');
-
-      const settingsMap: Record<string, string> = {};
-      settings?.forEach(s => {
-        settingsMap[s.key] = s.value || '';
-      });
-
-      if (settingsMap['telegram_enabled'] !== 'true') return;
-      if (!settingsMap['telegram_bot_token'] || !settingsMap['telegram_chat_id']) return;
-
-      const itemsList = orderItems.map(item => 
-        `• ${item.product_name_snapshot} x${item.quantity}`
-      ).join('\n');
-
-      const message = `
-🛒 *Yangi buyurtma!*
-
-📋 *Buyurtma:* ${order.order_number}
-👤 *Mijoz:* ${order.customer_name}
-📞 *Telefon:* ${order.customer_phone}
-
-*Mahsulotlar:*
-${itemsList}
-
-💰 *Jami:* ${new Intl.NumberFormat('uz-UZ').format(order.total_price)} so'm
-
-${order.customer_message ? `💬 *Xabar:* ${order.customer_message}` : ''}
-      `.trim();
-
-      await fetch(`https://api.telegram.org/bot${settingsMap['telegram_bot_token']}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: settingsMap['telegram_chat_id'],
-          text: message,
-          parse_mode: 'Markdown',
-        }),
-      });
-    } catch (error) {
-      console.error('Telegram notification error:', error);
     }
   };
 

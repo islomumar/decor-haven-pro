@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
-import { products, categories } from '@/lib/data';
+import { useFeaturedProducts, useCategories } from '@/hooks/useProducts';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
+import { LazyImage } from '@/components/LazyImage';
 
 export default function Index() {
   const { language, t } = useLanguage();
-  const featuredProducts = products.filter(p => p.featured).slice(0, 8);
+  const { products: featuredProducts, loading: productsLoading } = useFeaturedProducts(8);
+  const { categories, loading: categoriesLoading } = useCategories();
 
   return (
     <div className="min-h-screen">
@@ -102,11 +104,22 @@ export default function Index() {
               <Link to="/catalog">{t.products.viewAll} <ArrowRight className="w-4 h-4" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          
+          {productsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">
+              Hozircha tanlangan mahsulotlar yo'q
+            </p>
+          )}
         </div>
       </section>
 
@@ -121,25 +134,41 @@ export default function Index() {
               className="font-serif text-3xl font-bold"
             />
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {categories.slice(0, 8).map(category => (
-              <Link
-                key={category.id}
-                to={`/catalog?category=${category.id}`}
-                className="group relative aspect-square rounded-2xl overflow-hidden"
-              >
-                <img src={category.image} alt={language === 'uz' ? category.name_uz : category.name_ru} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-white font-medium text-lg">{language === 'uz' ? category.name_uz : category.name_ru}</h3>
-                  <p className="text-white/70 text-sm">{category.productCount} {t.catalog.products}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          
+          {categoriesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {categories.slice(0, 8).map(category => (
+                <Link
+                  key={category.id}
+                  to={`/catalog?category=${category.id}`}
+                  className="group relative aspect-square rounded-2xl overflow-hidden"
+                >
+                  <LazyImage 
+                    src={category.image || '/placeholder.svg'} 
+                    alt={language === 'uz' ? category.name_uz : category.name_ru} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    wrapperClassName="w-full h-full"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="text-white font-medium text-lg">
+                      {language === 'uz' ? category.name_uz : category.name_ru}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">
+              Hozircha kategoriyalar yo'q
+            </p>
+          )}
         </div>
       </section>
-
     </div>
   );
 }

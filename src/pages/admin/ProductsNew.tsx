@@ -124,8 +124,11 @@ const emptyForm: FormData = {
   is_followed: true,
 };
 
+const ADMIN_PAGE_SIZE = 20;
+
 export default function ProductsNew() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -135,8 +138,10 @@ export default function ProductsNew() {
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [slugError, setSlugError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
@@ -144,22 +149,77 @@ export default function ProductsNew() {
   const { toast } = useToast();
   const { language } = useLanguage();
 
+  // Debounce search
   useEffect(() => {
-    fetchData();
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchCategories();
   }, []);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    fetchProducts();
+  }, [currentPage, debouncedSearch, categoryFilter, statusFilter]);
+
+  const fetchCategories = async () => {
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        supabase.from('products').select('*').order('created_at', { ascending: false }),
-        supabase.from('categories').select('id, name_uz, name_ru').order('sort_order'),
-      ]);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name_uz, name_ru')
+        .order('sort_order');
+      
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
-      if (productsRes.error) throw productsRes.error;
-      if (categoriesRes.error) throw categoriesRes.error;
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' });
 
-      setProducts(productsRes.data || []);
-      setCategories(categoriesRes.data || []);
+      // Apply filters
+      if (debouncedSearch) {
+        query = query.or(`name_uz.ilike.%${debouncedSearch}%,name_ru.ilike.%${debouncedSearch}%,slug.ilike.%${debouncedSearch}%`);
+      }
+
+      if (categoryFilter !== 'all') {
+        query = query.eq('category_id', categoryFilter);
+      }
+
+      if (statusFilter === 'active') {
+        query = query.eq('is_active', true);
+      } else if (statusFilter === 'inactive') {
+        query = query.eq('is_active', false);
+      } else if (statusFilter === 'featured') {
+        query = query.eq('is_featured', true);
+      } else if (statusFilter === 'out_of_stock') {
+        query = query.eq('in_stock', false);
+      }
+
+      // Pagination
+      const from = (currentPage - 1) * ADMIN_PAGE_SIZE;
+      const to = from + ADMIN_PAGE_SIZE - 1;
+
+      query = query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      const { data, count, error } = await query;
+
+      if (error) throw error;
+
+      setProducts(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error:', error);
       toast({ variant: 'destructive', title: 'Xatolik', description: "Ma'lumotlarni yuklashda xatolik" });
@@ -379,7 +439,7 @@ export default function ProductsNew() {
       }
 
       setDialogOpen(false);
-      fetchData();
+      fetchProducts();
     } catch (error: any) {
       if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
         setSlugError('Bu slug allaqachon mavjud');
@@ -397,7 +457,7 @@ export default function ProductsNew() {
       if (error) throw error;
       toast({ title: 'Muvaffaqiyat', description: "Mahsulot o'chirildi" });
       setDeleteDialogOpen(false);
-      fetchData();
+      fetchProducts();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
     }
@@ -411,7 +471,7 @@ export default function ProductsNew() {
         .eq('id', product.id);
 
       if (error) throw error;
-      fetchData();
+      fetchProducts();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
     }
@@ -426,23 +486,13 @@ export default function ProductsNew() {
     return { status: 'missing', label: 'SEO yoq' };
   };
 
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchQuery || 
-      product.name_uz.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.name_ru.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.slug && product.slug.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
-    
-    const matchesStatus = statusFilter === 'all' ||
-      (statusFilter === 'active' && product.is_active) ||
-      (statusFilter === 'inactive' && !product.is_active) ||
-      (statusFilter === 'featured' && product.is_featured) ||
-      (statusFilter === 'out_of_stock' && !product.in_stock);
+  // Pagination helpers
+  const totalPages = Math.ceil(totalCount / ADMIN_PAGE_SIZE);
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -461,7 +511,7 @@ export default function ProductsNew() {
           <p className="text-muted-foreground">Barcha mahsulotlarni boshqaring</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={fetchData}>
+          <Button variant="outline" onClick={fetchProducts}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Yangilash
           </Button>
@@ -518,7 +568,7 @@ export default function ProductsNew() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
-            <span>Barcha mahsulotlar ({filteredProducts.length})</span>
+            <span>Barcha mahsulotlar ({totalCount})</span>
             <div className="flex gap-2">
               <Badge variant="outline">{products.filter(p => p.is_active).length} faol</Badge>
               <Badge variant="secondary">{products.filter(p => p.is_featured).length} tanlangan</Badge>
@@ -539,7 +589,7 @@ export default function ProductsNew() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((product) => {
+              {products.map((product) => {
                 const seoStatus = getSeoStatus(product);
                 return (
                   <TableRow key={product.id}>
@@ -627,7 +677,7 @@ export default function ProductsNew() {
                   </TableRow>
                 );
               })}
-              {filteredProducts.length === 0 && (
+              {products.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2">
@@ -640,6 +690,30 @@ export default function ProductsNew() {
             </TableBody>
           </Table>
         </CardContent>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 p-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Oldingi
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Keyingi
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Create/Edit Dialog */}

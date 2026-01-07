@@ -10,12 +10,14 @@ import { useProducts, useCategories, MATERIALS, ProductFilters } from '@/hooks/u
 import { useLanguage } from '@/hooks/useLanguage';
 import { useSEO } from '@/hooks/useSEO';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { useAuth } from '@/hooks/useAuth';
 
 const PAGE_SIZE = 24;
 
 export default function Catalog() {
   const { language, t } = useLanguage();
   const { settings } = useSystemSettings();
+  const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial values from URL
@@ -304,6 +306,11 @@ export default function Catalog() {
             ) : (
               <div className="text-center py-16">
                 <p className="text-muted-foreground">{t.catalog.noProducts}</p>
+                {isAdmin && selectedCategory !== 'all' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Debug: Category ID = {selectedCategory}
+                  </p>
+                )}
                 <Button variant="link" onClick={clearFilters}>{t.catalog.clearFilters}</Button>
               </div>
             )}

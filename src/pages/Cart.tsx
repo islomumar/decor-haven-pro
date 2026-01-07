@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useLanguage } from '@/hooks/useLanguage';
+import { OrderForm } from '@/components/OrderForm';
 
 export default function Cart() {
+  const [orderFormOpen, setOrderFormOpen] = useState(false);
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
   const { language, t } = useLanguage();
 
@@ -126,9 +129,18 @@ export default function Cart() {
               </div>
 
               <Button
+                size="lg"
+                className="w-full gap-2 rounded-full mb-3"
+                onClick={() => setOrderFormOpen(true)}
+              >
+                <Send className="w-5 h-5" /> {language === 'uz' ? 'Buyurtma berish' : 'Оформить заказ'}
+              </Button>
+
+              <Button
                 asChild
                 size="lg"
-                className="w-full gap-2 rounded-full bg-green-500 hover:bg-green-600 mb-3"
+                variant="outline"
+                className="w-full gap-2 rounded-full bg-green-500 hover:bg-green-600 text-white border-0 mb-3"
               >
                 <a href={`https://wa.me/998901234567?text=${generateWhatsAppMessage()}`} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="w-5 h-5" /> {t.cart.sendWhatsApp}
@@ -139,6 +151,8 @@ export default function Cart() {
                 <Link to="/catalog">{t.cart.continueShopping}</Link>
               </Button>
             </div>
+            
+            <OrderForm open={orderFormOpen} onOpenChange={setOrderFormOpen} />
           </div>
         </div>
       </div>

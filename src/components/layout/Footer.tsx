@@ -31,7 +31,7 @@ export function Footer() {
   const hasSocialLinks = settings?.social_facebook || settings?.social_instagram || settings?.social_telegram;
 
   return (
-    <footer className="bg-gradient-to-b from-[#8B6F4E] to-[#6B5340] text-white">
+    <footer className="bg-primary text-primary-foreground">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
@@ -56,8 +56,8 @@ export function Footer() {
                 className={`items-center gap-3 ${logoUrl ? 'hidden' : 'flex'}`}
                 style={{ display: logoUrl ? 'none' : 'flex' }}
               >
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-[#6B5340] font-serif font-bold text-2xl">
+                <div className="w-12 h-12 bg-primary-foreground rounded-lg flex items-center justify-center">
+                  <span className="text-primary font-serif font-bold text-2xl">
                     {siteName.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -65,7 +65,7 @@ export function Footer() {
             </div>
 
             {/* Description */}
-            <p className="text-white/80 text-sm leading-relaxed max-w-xs">
+            <p className="text-primary-foreground/80 text-sm leading-relaxed max-w-xs">
               {shortDescription || t.footer.description}
             </p>
 
@@ -79,27 +79,27 @@ export function Footer() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-10 h-10 border border-white/30 rounded-full flex items-center justify-center 
-                                 hover:bg-white/10 hover:border-white/50 transition-all duration-300 group"
+                      className="w-10 h-10 border border-primary-foreground/30 rounded-full flex items-center justify-center 
+                                 hover:bg-primary-foreground/10 hover:border-primary-foreground/50 transition-all duration-300 group"
                       aria-label={social.label}
                     >
-                      <social.icon className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+                      <social.icon className="w-4 h-4 text-primary-foreground/80 group-hover:text-primary-foreground transition-colors" />
                     </a>
                   ) : null
                 )
               ) : (
                 <>
-                  <a href="#" className="w-10 h-10 border border-white/30 rounded-full flex items-center justify-center 
-                             hover:bg-white/10 hover:border-white/50 transition-all duration-300 group" aria-label="Facebook">
-                    <Facebook className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+                  <a href="#" className="w-10 h-10 border border-primary-foreground/30 rounded-full flex items-center justify-center 
+                             hover:bg-primary-foreground/10 hover:border-primary-foreground/50 transition-all duration-300 group" aria-label="Facebook">
+                    <Facebook className="w-4 h-4 text-primary-foreground/80 group-hover:text-primary-foreground transition-colors" />
                   </a>
-                  <a href="#" className="w-10 h-10 border border-white/30 rounded-full flex items-center justify-center 
-                             hover:bg-white/10 hover:border-white/50 transition-all duration-300 group" aria-label="Instagram">
-                    <Instagram className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+                  <a href="#" className="w-10 h-10 border border-primary-foreground/30 rounded-full flex items-center justify-center 
+                             hover:bg-primary-foreground/10 hover:border-primary-foreground/50 transition-all duration-300 group" aria-label="Instagram">
+                    <Instagram className="w-4 h-4 text-primary-foreground/80 group-hover:text-primary-foreground transition-colors" />
                   </a>
-                  <a href="#" className="w-10 h-10 border border-white/30 rounded-full flex items-center justify-center 
-                             hover:bg-white/10 hover:border-white/50 transition-all duration-300 group" aria-label="Telegram">
-                    <Send className="w-4 h-4 text-white/80 group-hover:text-white transition-colors" />
+                  <a href="#" className="w-10 h-10 border border-primary-foreground/30 rounded-full flex items-center justify-center 
+                             hover:bg-primary-foreground/10 hover:border-primary-foreground/50 transition-all duration-300 group" aria-label="Telegram">
+                    <Send className="w-4 h-4 text-primary-foreground/80 group-hover:text-primary-foreground transition-colors" />
                   </a>
                 </>
               )}
@@ -108,7 +108,7 @@ export function Footer() {
 
           {/* Quick Links Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-white">
+            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
               {t.footer.quickLinks}
             </h4>
             <ul className="space-y-3">
@@ -116,7 +116,7 @@ export function Footer() {
                 <li key={link.to}>
                   <Link 
                     to={link.to} 
-                    className="text-white/70 hover:text-white text-sm transition-colors duration-200 
+                    className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors duration-200 
                                inline-block hover:translate-x-1 transform"
                   >
                     {link.label}
@@ -128,34 +128,34 @@ export function Footer() {
 
           {/* Contact Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-white">
+            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
               {t.footer.contact}
             </h4>
             <ul className="space-y-4">
               {address && (
                 <li className="flex items-start gap-3 group">
-                  <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5 text-white/60" />
-                  <span className="text-white/70 text-sm leading-relaxed">
+                  <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5 text-primary-foreground/60" />
+                  <span className="text-primary-foreground/70 text-sm leading-relaxed">
                     {address}
                   </span>
                 </li>
               )}
               {contactPhone && (
                 <li className="flex items-center gap-3 group">
-                  <Phone className="w-5 h-5 flex-shrink-0 text-white/60" />
+                  <Phone className="w-5 h-5 flex-shrink-0 text-primary-foreground/60" />
                   <a 
                     href={`tel:${contactPhone.replace(/\s/g, '')}`} 
-                    className="text-white/70 hover:text-white text-sm transition-colors duration-200"
+                    className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors duration-200"
                   >
                     {contactPhone}
                   </a>
                 </li>
               )}
               <li className="flex items-center gap-3 group">
-                <Mail className="w-5 h-5 flex-shrink-0 text-white/60" />
+                <Mail className="w-5 h-5 flex-shrink-0 text-primary-foreground/60" />
                 <a 
                   href={`mailto:info@${window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}`} 
-                  className="text-white/70 hover:text-white text-sm transition-colors duration-200 break-all"
+                  className="text-primary-foreground/70 hover:text-primary-foreground text-sm transition-colors duration-200 break-all"
                 >
                   info@{window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}
                 </a>
@@ -165,16 +165,16 @@ export function Footer() {
 
           {/* Working Hours Column */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-5 text-white">
+            <h4 className="font-serif font-semibold text-lg mb-5 text-primary-foreground">
               {t.footer.workingHours}
             </h4>
-            <div className="text-sm text-white/70 leading-relaxed">
+            <div className="text-sm text-primary-foreground/70 leading-relaxed">
               {workingHours ? (
                 <p>{workingHours}</p>
               ) : (
                 <div className="space-y-2">
                   <p>{t.footer.weekdays}</p>
-                  <p className="text-white/90 font-medium">{t.footer.saturday}</p>
+                  <p className="text-primary-foreground/90 font-medium">{t.footer.saturday}</p>
                   <p>{t.footer.sunday}</p>
                 </div>
               )}
@@ -184,10 +184,10 @@ export function Footer() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-white/10">
+      <div className="border-t border-primary-foreground/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center">
-            <p className="text-sm text-white/50">
+            <p className="text-sm text-primary-foreground/50">
               © {new Date().getFullYear()} {siteName}. {t.footer.rights}
             </p>
           </div>

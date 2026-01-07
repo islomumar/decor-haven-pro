@@ -17,16 +17,16 @@ export default function Index() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-0">
           <EditableImage
             contentKey="hero_background_image"
             fallbackSrc="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920"
             alt="Modern living room"
             className="w-full h-full object-cover"
-            wrapperClassName="w-full h-full"
+            wrapperClassName="w-full h-full relative z-10"
             section="hero"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent pointer-events-none z-20" />
         </div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-xl">

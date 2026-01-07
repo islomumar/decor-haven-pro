@@ -3,11 +3,19 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, hasPermission, canViewModule, RolePermissions, Permission } from '@/lib/permissions';
 
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  status: 'active' | 'disabled';
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   userRole: AppRole | null;
+  userProfile: UserProfile | null;
   isAdmin: boolean;
   isManager: boolean;
   isSeller: boolean;
@@ -25,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -33,13 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer role fetching with setTimeout
+        // Defer role and profile fetching with setTimeout
         if (session?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id);
+            fetchUserData(session.user.id);
           }, 0);
         } else {
           setUserRole(null);
+          setUserProfile(null);
         }
       }
     );
@@ -49,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserRole(session.user.id);
+        fetchUserData(session.user.id);
       }
       setLoading(false);
     });
@@ -57,23 +67,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserData = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch role
+      const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .single();
 
-      if (!error && data) {
-        // Map 'editor' to 'manager' for backward compatibility
-        const role = data.role === 'editor' ? 'manager' : data.role;
+      if (roleData) {
+        const role = roleData.role === 'editor' ? 'manager' : roleData.role;
         setUserRole(role as AppRole);
       } else {
         setUserRole(null);
       }
+
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileData) {
+        setUserProfile({
+          id: profileData.id,
+          name: profileData.name,
+          email: profileData.email,
+          status: profileData.status as 'active' | 'disabled',
+        });
+      } else {
+        setUserProfile(null);
+      }
     } catch {
       setUserRole(null);
+      setUserProfile(null);
     }
   };
 
@@ -101,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
+    setUserProfile(null);
   };
 
   const value = {
@@ -108,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     loading,
     userRole,
+    userProfile,
     isAdmin: userRole === 'admin',
     isManager: userRole === 'manager',
     isSeller: userRole === 'seller',

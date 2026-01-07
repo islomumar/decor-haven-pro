@@ -145,6 +145,7 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          created_by_user_id: string | null
           customer_id: string | null
           customer_message: string | null
           customer_name: string
@@ -157,6 +158,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by_user_id?: string | null
           customer_id?: string | null
           customer_message?: string | null
           customer_name: string
@@ -169,6 +171,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by_user_id?: string | null
           customer_id?: string | null
           customer_message?: string | null
           customer_name?: string
@@ -292,6 +295,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       settings: {
         Row: {

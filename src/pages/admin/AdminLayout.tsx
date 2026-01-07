@@ -8,7 +8,8 @@ import {
   Menu,
   X,
   LogOut,
-  Bell
+  Bell,
+  Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ const navItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Buyurtmalar', url: '/admin/orders', icon: ShoppingCart },
   { title: 'Mahsulotlar', url: '/admin/products', icon: Package },
+  { title: 'Mavzular', url: '/admin/themes', icon: Palette },
   { title: 'Sozlamalar', url: '/admin/settings', icon: Settings },
 ];
 

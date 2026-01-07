@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus, Trash2, ShoppingBag, MessageCircle } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -45,7 +45,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     return (language === 'uz' ? product.name_uz : product.name_ru) || product.name_uz || product.name_ru || product.name || '';
   };
 
-  // Build Telegram message
+  // Build Telegram message for order
   const buildTelegramMessage = () => {
     const itemsList = items.map(item => {
       const name = getProductName(item.product);
@@ -66,64 +66,73 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       {/* Overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200",
+          "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={onClose}
       />
 
-      {/* Drawer - Desktop: Right side, Mobile: Bottom sheet */}
+      {/* Drawer - Full height on desktop, bottom sheet on mobile */}
       <div
         className={cn(
-          "fixed z-50 bg-card flex flex-col transition-transform duration-250 ease-out",
-          // Desktop styles
-          "md:top-0 md:right-0 md:h-full md:w-[400px] md:max-w-[90vw] md:border-l md:border-border",
+          "fixed z-50 bg-card shadow-2xl flex flex-col transition-transform duration-300 ease-out",
+          // Desktop styles - full height right drawer
+          "md:top-0 md:right-0 md:h-screen md:max-h-screen md:w-[420px] md:max-w-[90vw]",
           // Mobile styles - bottom sheet
-          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:max-h-[85vh] max-md:rounded-t-2xl max-md:border-t max-md:border-border",
+          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:h-[90vh] max-md:max-h-[90vh] max-md:rounded-t-3xl",
           // Transform states
           isOpen 
             ? "md:translate-x-0 max-md:translate-y-0" 
             : "md:translate-x-full max-md:translate-y-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-primary" />
-            <h2 className="font-serif font-bold text-lg">
-              {language === 'uz' ? 'Savatcha' : 'Корзина'}
-            </h2>
-            {totalItems > 0 && (
-              <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full">
-                {totalItems}
-              </span>
-            )}
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-border bg-card">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <ShoppingBag className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-serif font-bold text-xl">
+                {language === 'uz' ? 'Savatcha' : 'Корзина'}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {totalItems} {language === 'uz' ? 'ta mahsulot' : 'товаров'}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* Product List - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground mb-4">
-                {language === 'uz' ? 'Savatchangiz bo\'sh' : 'Ваша корзина пуста'}
+            <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
+                <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
+              </div>
+              <h3 className="font-serif font-bold text-lg mb-2">
+                {language === 'uz' ? 'Savatcha bo\'sh' : 'Корзина пуста'}
+              </h3>
+              <p className="text-muted-foreground text-sm mb-6 max-w-[200px]">
+                {language === 'uz' 
+                  ? 'Mahsulotlarni katalogdan tanlang' 
+                  : 'Выберите товары из каталога'}
               </p>
-              <Button asChild onClick={onClose}>
+              <Button asChild className="rounded-full px-6" onClick={onClose}>
                 <Link to="/catalog">
                   {language === 'uz' ? 'Katalogga o\'tish' : 'Перейти в каталог'}
                 </Link>
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="p-4 space-y-3">
               {items.map((item) => {
                 const name = getProductName(item.product);
                 const price = item.product.price || 0;
@@ -132,13 +141,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 return (
                   <div
                     key={item.product.id}
-                    className="flex gap-3 p-3 bg-muted/50 rounded-xl"
+                    className="flex gap-4 p-4 bg-muted/40 rounded-2xl hover:bg-muted/60 transition-colors"
                   >
                     {/* Image */}
                     <Link 
                       to={`/product/${(item.product as any).slug || item.product.id}`}
                       onClick={onClose}
-                      className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-muted"
+                      className="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-background"
                     >
                       <img
                         src={image}
@@ -148,50 +157,55 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </Link>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <Link 
-                        to={`/product/${(item.product as any).slug || item.product.id}`}
-                        onClick={onClose}
-                        className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors"
-                      >
-                        {name}
-                      </Link>
-                      
-                      {(item.selectedSize || item.selectedColor) && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {item.selectedSize && <span>{item.selectedSize}</span>}
-                          {item.selectedSize && item.selectedColor && ' / '}
-                          {item.selectedColor && <span>{item.selectedColor}</span>}
-                        </p>
-                      )}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <Link 
+                          to={`/product/${(item.product as any).slug || item.product.id}`}
+                          onClick={onClose}
+                          className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors"
+                        >
+                          {name}
+                        </Link>
+                        
+                        {(item.selectedSize || item.selectedColor) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {item.selectedSize && <span>{item.selectedSize}</span>}
+                            {item.selectedSize && item.selectedColor && ' • '}
+                            {item.selectedColor && <span>{item.selectedColor}</span>}
+                          </p>
+                        )}
+                      </div>
 
                       <div className="flex items-center justify-between mt-2">
-                        <span className="font-serif font-bold text-sm">
-                          {formatPrice(price * item.quantity)} <span className="text-xs text-muted-foreground">{t.products.currency}</span>
+                        {/* Price */}
+                        <span className="font-serif font-bold">
+                          {formatPrice(price * item.quantity)} 
+                          <span className="text-xs text-muted-foreground ml-1">{t.products.currency}</span>
                         </span>
 
                         {/* Quantity controls */}
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background hover:bg-muted transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-3.5 h-3.5" />
                           </button>
-                          <span className="w-8 text-center text-sm font-medium">
+                          <span className="w-8 text-center text-sm font-semibold">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background hover:bg-muted transition-colors"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => removeItem(item.product.id)}
-                            className="w-7 h-7 flex items-center justify-center rounded-full text-destructive hover:bg-destructive/10 transition-colors ml-1"
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-2"
+                            aria-label="Remove"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -203,29 +217,29 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Footer with CTA */}
+        {/* Footer - Sticky CTA */}
         {items.length > 0 && (
-          <div className="border-t border-border p-4 space-y-3 bg-card">
+          <div className="flex-shrink-0 border-t border-border bg-card px-6 py-5 space-y-4">
             {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">
-                {language === 'uz' ? 'Jami' : 'Итого'}:
+              <span className="text-muted-foreground font-medium">
+                {language === 'uz' ? 'Jami' : 'Итого'}
               </span>
-              <span className="font-serif text-xl font-bold">
-                {formatPrice(totalPrice)} <span className="text-sm text-muted-foreground">{t.products.currency}</span>
+              <span className="font-serif text-2xl font-bold">
+                {formatPrice(totalPrice)} 
+                <span className="text-sm font-normal text-muted-foreground ml-1">{t.products.currency}</span>
               </span>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <Button
                 asChild
                 size="lg"
-                className="w-full rounded-full gap-2 bg-[#0088cc] hover:bg-[#0077b5]"
+                className="w-full rounded-full h-12 text-base font-semibold"
               >
                 <a href={telegramLink} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-5 h-5" />
-                  {language === 'uz' ? 'Telegram orqali buyurtma' : 'Заказать через Telegram'}
+                  {language === 'uz' ? 'Buyurtma berish' : 'Оформить заказ'}
                 </a>
               </Button>
               
@@ -233,11 +247,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="w-full rounded-full"
+                className="w-full rounded-full h-12"
                 onClick={onClose}
               >
                 <Link to="/cart">
-                  {language === 'uz' ? 'Savatni ko\'rish' : 'Посмотреть корзину'}
+                  {language === 'uz' ? 'Savatchani ko\'rish' : 'Посмотреть корзину'}
                 </Link>
               </Button>
             </div>

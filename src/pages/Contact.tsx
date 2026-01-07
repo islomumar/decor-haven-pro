@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, Send, MessageCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,12 +7,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
 import { EditableImage } from '@/components/EditableImage';
+import { useSiteContent } from '@/hooks/useSiteContent';
 
 export default function Contact() {
   const { language, t } = useLanguage();
   const { toast } = useToast();
+  const { getContent } = useSiteContent();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
+
+  // Yandex map link - admin tomonidan tahrirlanishi mumkin
+  const yandexMapLink = getContent('contact_yandex_map_link', language, 'https://yandex.uz/maps/-/CHQpYCZt');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,14 +194,43 @@ export default function Contact() {
               </Button>
             </div>
 
-            {/* Map Image */}
-            <EditableImage
-              contentKey="contact_map_image"
-              fallbackSrc="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80"
-              alt="Bizning joylashuvimiz"
-              className="rounded-2xl h-64 w-full object-cover"
-              section="contact"
-            />
+            {/* Map Image with Yandex Link */}
+            <a 
+              href={yandexMapLink}
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block relative group"
+            >
+              <EditableImage
+                contentKey="contact_map_image"
+                fallbackSrc="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80"
+                alt="Bizning joylashuvimiz"
+                className="rounded-2xl h-64 w-full object-cover"
+                section="contact"
+              />
+              {/* Overlay with link indicator */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-foreground px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+                  <ExternalLink className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {language === 'uz' ? "Yandex Xaritada ochish" : "Открыть в Яндекс Картах"}
+                  </span>
+                </div>
+              </div>
+            </a>
+
+            {/* Yandex Map Link Editor for Admin */}
+            <div className="text-sm text-muted-foreground">
+              <span>{language === 'uz' ? "Xarita havolasi: " : "Ссылка на карту: "}</span>
+              <EditableText
+                contentKey="contact_yandex_map_link"
+                fallback="https://yandex.uz/maps/-/CHQpYCZt"
+                as="span"
+                className="text-primary hover:underline break-all"
+                section="contact"
+                field="yandex_map_link"
+              />
+            </div>
           </div>
         </div>
       </div>

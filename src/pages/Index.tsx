@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
 import { products, categories } from '@/lib/data';
 import { useLanguage } from '@/hooks/useLanguage';
+import { EditableText } from '@/components/EditableText';
 
 export default function Index() {
   const { language, t } = useLanguage();
@@ -24,29 +25,79 @@ export default function Index() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-xl">
             <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 animate-fade-in">
-              {t.hero.title}
+              <EditableText 
+                contentKey="hero_title" 
+                fallback={t.hero.title}
+                as="span"
+                className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold"
+              />
             </h1>
             <p className="text-lg text-muted-foreground mb-8 animate-fade-in">
-              {t.hero.subtitle}
+              <EditableText 
+                contentKey="hero_subtitle" 
+                fallback={t.hero.subtitle}
+                as="span"
+                className="text-lg"
+              />
             </p>
             <div className="flex flex-wrap gap-4 animate-fade-in">
               <Button asChild size="lg" className="rounded-full px-8">
-                <Link to="/catalog">{t.hero.cta}</Link>
+                <Link to="/catalog">
+                  <EditableText 
+                    contentKey="hero_cta" 
+                    fallback={t.hero.cta}
+                    as="span"
+                  />
+                </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-full px-8">
-                <Link to="/contact">{t.hero.consultation}</Link>
+                <Link to="/contact">
+                  <EditableText 
+                    contentKey="hero_consultation" 
+                    fallback={t.hero.consultation}
+                    as="span"
+                  />
+                </Link>
               </Button>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Promo Section */}
+      <section className="py-12 bg-accent/10">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="font-serif text-2xl md:text-3xl font-bold mb-2">
+            <EditableText 
+              contentKey="promo_title" 
+              fallback="Maxsus taklif!"
+              as="span"
+              className="font-serif text-2xl md:text-3xl font-bold"
+            />
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            <EditableText 
+              contentKey="promo_subtitle" 
+              fallback="Barcha mebellarga 20% chegirma"
+              as="span"
+              className="text-lg"
+            />
+          </p>
+        </div>
+      </section>
 
       {/* Featured Products */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="font-serif text-3xl font-bold">{t.products.featured}</h2>
+            <h2 className="font-serif text-3xl font-bold">
+              <EditableText 
+                contentKey="featured_title" 
+                fallback={t.products.featured}
+                as="span"
+                className="font-serif text-3xl font-bold"
+              />
+            </h2>
             <Button asChild variant="ghost" className="gap-2">
               <Link to="/catalog">{t.products.viewAll} <ArrowRight className="w-4 h-4" /></Link>
             </Button>
@@ -62,7 +113,14 @@ export default function Index() {
       {/* Categories */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
-          <h2 className="font-serif text-3xl font-bold text-center mb-10">{t.categories.title}</h2>
+          <h2 className="font-serif text-3xl font-bold text-center mb-10">
+            <EditableText 
+              contentKey="categories_title" 
+              fallback={t.categories.title}
+              as="span"
+              className="font-serif text-3xl font-bold"
+            />
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.slice(0, 8).map(category => (
               <Link

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, Truck, Shield, Palette, Headphones, Award } from 'lucide-react';
+import { ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
 import { products, categories, reviews } from '@/lib/data';
@@ -8,14 +8,6 @@ import { useLanguage } from '@/hooks/useLanguage';
 export default function Index() {
   const { language, t } = useLanguage();
   const featuredProducts = products.filter(p => p.featured).slice(0, 8);
-
-  const benefits = [
-    { icon: Palette, title: t.benefits.custom, desc: t.benefits.customDesc },
-    { icon: Truck, title: t.benefits.delivery, desc: t.benefits.deliveryDesc },
-    { icon: Shield, title: t.benefits.warranty, desc: t.benefits.warrantyDesc },
-    { icon: Award, title: t.benefits.quality, desc: t.benefits.qualityDesc },
-    { icon: Headphones, title: t.benefits.consultation, desc: t.benefits.consultationDesc },
-  ];
 
   return (
     <div className="min-h-screen">
@@ -49,23 +41,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="font-serif text-3xl font-bold text-center mb-12">{t.benefits.title}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {benefits.map((benefit, i) => (
-              <div key={i} className="text-center p-6 bg-card rounded-2xl shadow-warm">
-                <div className="w-14 h-14 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                  <benefit.icon className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="font-medium text-sm mb-2">{benefit.title}</h3>
-                <p className="text-xs text-muted-foreground">{benefit.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Featured Products */}
       <section className="py-16">

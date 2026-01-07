@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { CartDrawer } from '@/components/CartDrawer';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { totalItems } = useCart();
   const location = useLocation();
@@ -101,16 +103,21 @@ export function Header() {
             </a>
 
             {/* Cart */}
-            <Link to="/cart" className="relative">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingBag className="w-5 h-5" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium">
-                    {totalItems}
-                  </span>
-                )}
+            <button onClick={() => setCartOpen(true)} className="relative">
+              <Button variant="ghost" size="icon" className="relative" asChild>
+                <span>
+                  <ShoppingBag className="w-5 h-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground text-xs rounded-full flex items-center justify-center font-medium">
+                      {totalItems}
+                    </span>
+                  )}
+                </span>
               </Button>
-            </Link>
+            </button>
+
+            {/* Cart Drawer */}
+            <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
 
             {/* Mobile Menu Toggle */}
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsOpen(!isOpen)}>

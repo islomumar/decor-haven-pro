@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
-import { products, categories, reviews } from '@/lib/data';
+import { products, categories } from '@/lib/data';
 import { useLanguage } from '@/hooks/useLanguage';
 
 export default function Index() {
@@ -82,46 +82,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Promo Banner */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary to-warm-brown p-8 md:p-16">
-            <div className="relative z-10 max-w-lg">
-              <span className="inline-block bg-accent text-accent-foreground text-sm font-medium px-4 py-1 rounded-full mb-4">{t.promo.title}</span>
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary-foreground mb-4">{t.promo.subtitle}</h2>
-              <p className="text-primary-foreground/80 mb-6">{t.promo.description}</p>
-              <Button asChild size="lg" variant="secondary" className="rounded-full">
-                <Link to="/catalog">{t.promo.cta}</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <h2 className="font-serif text-3xl font-bold text-center mb-10">{t.reviews.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {reviews.map(review => (
-              <div key={review.id} className="bg-card p-6 rounded-2xl shadow-warm">
-                <div className="flex items-center gap-3 mb-4">
-                  <img src={review.avatar} alt={review.name} className="w-12 h-12 rounded-full object-cover" />
-                  <div>
-                    <h4 className="font-medium text-sm">{review.name}</h4>
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-gold-accent text-gold-accent' : 'text-muted'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">{language === 'uz' ? review.text_uz : review.text_ru}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

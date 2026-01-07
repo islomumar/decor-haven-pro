@@ -194,30 +194,28 @@ export default function Contact() {
               </Button>
             </div>
 
-            {/* Map Image with Yandex Link */}
-            <a 
-              href={yandexMapLink}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block relative group"
-            >
-              <EditableImage
-                contentKey="contact_map_image"
-                fallbackSrc="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80"
-                alt="Bizning joylashuvimiz"
-                className="rounded-2xl h-64 w-full object-cover"
-                section="contact"
+            {/* Yandex Map Embed */}
+            <div className="rounded-2xl overflow-hidden h-64 bg-muted relative group">
+              <iframe
+                src="https://yandex.uz/map-widget/v1/?um=constructor%3A1234567890&amp;source=constructor&amp;ll=69.2401%2C41.3111&amp;z=15"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                title="Bizning joylashuvimiz"
               />
-              {/* Overlay with link indicator */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 text-foreground px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
-                  <ExternalLink className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    {language === 'uz' ? "Yandex Xaritada ochish" : "Открыть в Яндекс Картах"}
-                  </span>
-                </div>
-              </div>
-            </a>
+              {/* Open in Yandex Maps button */}
+              <a
+                href={yandexMapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute top-3 right-3 bg-white/90 hover:bg-white text-foreground px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg transition-colors text-sm font-medium"
+              >
+                <ExternalLink className="w-4 h-4" />
+                {language === 'uz' ? "Kattaroq ochish" : "Открыть больше"}
+              </a>
+            </div>
 
             {/* Yandex Map Link Editor for Admin */}
             <div className="text-sm text-muted-foreground">

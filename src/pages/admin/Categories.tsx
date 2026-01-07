@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { 
   Plus, 
   Pencil, 
@@ -9,7 +9,10 @@ import {
   Globe,
   AlertTriangle,
   Package,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  X,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -92,7 +95,55 @@ export default function Categories() {
   const [slugError, setSlugError] = useState('');
   const [activeTab, setActiveTab] = useState('general');
   const [productCounts, setProductCounts] = useState<Record<string, number>>({});
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Faqat JPG, PNG, WebP yoki GIF formatlarini yuklash mumkin' });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Rasm hajmi 5MB dan oshmasligi kerak' });
+      return;
+    }
+
+    setImageUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `category-${Date.now()}.${fileExt}`;
+      const filePath = `categories/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, image: publicUrl }));
+      toast({ title: 'Muvaffaqiyat', description: 'Rasm yuklandi' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Rasm yuklanmadi: ' + error.message });
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, image: '' }));
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -569,21 +620,60 @@ export default function Categories() {
               </div>
 
               <div className="space-y-2">
-                <Label>Rasm URL</Label>
-                <Input
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://..."
+                <Label>Rasm</Label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                    e.target.value = '';
+                  }}
                 />
-                {formData.image && (
-                  <div className="mt-2">
+                
+                {formData.image ? (
+                  <div className="relative inline-block">
                     <img 
                       src={formData.image} 
                       alt="Preview" 
-                      className="h-24 w-24 object-cover rounded-lg border"
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                      className="h-32 w-32 object-cover rounded-lg border"
+                      onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
                     />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                      onClick={removeImage}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-32 w-32 flex flex-col items-center justify-center gap-2 border-dashed"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={imageUploading}
+                  >
+                    {imageUploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <Plus className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Rasm yuklash</span>
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {!formData.image && (
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, WebP yoki GIF. Maksimum 5MB
+                  </p>
                 )}
               </div>
 

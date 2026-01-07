@@ -93,54 +93,42 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Generate order number (trigger will override, but types require it)
-      const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g, '')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-      
-      // Clean phone number (remove spaces for database)
-      const cleanPhone = formData.phone.replace(/\s/g, '');
-      
-      // Create the order
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert([{
-          order_number: orderNumber,
-          customer_name: formData.fullName.trim(),
-          customer_phone: cleanPhone,
-          customer_message: [
-            formData.renovationStatus && `Uy holati: ${renovationOptions.find(o => o.value === formData.renovationStatus)?.label}`,
-            formData.preferredTime && `Qo'ng'iroq vaqti: ${formData.preferredTime}`,
-            formData.comment && `Izoh: ${formData.comment}`,
-          ].filter(Boolean).join('\n') || null,
-          total_price: totalPrice,
-          status: 'new',
-        }])
-        .select()
-        .single();
+      // Build order message
+      const customerMessage = [
+        formData.renovationStatus && `Uy holati: ${renovationOptions.find(o => o.value === formData.renovationStatus)?.label}`,
+        formData.preferredTime && `Qo'ng'iroq vaqti: ${formData.preferredTime}`,
+        formData.comment && `Izoh: ${formData.comment}`,
+      ].filter(Boolean).join('\n') || undefined;
 
-      if (orderError) throw orderError;
-
-      // Create order items
+      // Prepare order items (only IDs and quantities - prices validated server-side)
       const orderItems = items.map(item => ({
-        order_id: orderData.id,
         product_id: item.product.id,
-        product_name_snapshot: getProductName(item.product),
         quantity: item.quantity,
-        price_snapshot: item.product.price || 0,
         selected_options: {
           size: item.selectedSize,
           color: item.selectedColor,
         },
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      // Call edge function for server-side price validation
+      const { data: orderResult, error: orderError } = await supabase.functions.invoke('create-order', {
+        body: {
+          customer_name: formData.fullName.trim(),
+          customer_phone: formData.phone.replace(/\s/g, ''),
+          customer_message: customerMessage,
+          items: orderItems,
+        },
+      });
 
-      if (itemsError) throw itemsError;
+      if (orderError) throw orderError;
+      
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Buyurtma yaratishda xatolik');
+      }
 
       // Clear cart and redirect
       clearCart();
-      navigate('/thank-you', { state: { orderNumber: orderData.order_number } });
+      navigate('/thank-you', { state: { orderNumber: orderResult.order_number } });
 
     } catch (error: any) {
       console.error('Order error:', error);

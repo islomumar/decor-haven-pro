@@ -21,6 +21,13 @@ export type Database = {
           id: string
           image: string | null
           is_active: boolean | null
+          is_followed: boolean | null
+          is_indexed: boolean | null
+          meta_description_ru: string | null
+          meta_description_uz: string | null
+          meta_keywords: string | null
+          meta_title_ru: string | null
+          meta_title_uz: string | null
           name_ru: string
           name_uz: string
           slug: string
@@ -33,6 +40,13 @@ export type Database = {
           id?: string
           image?: string | null
           is_active?: boolean | null
+          is_followed?: boolean | null
+          is_indexed?: boolean | null
+          meta_description_ru?: string | null
+          meta_description_uz?: string | null
+          meta_keywords?: string | null
+          meta_title_ru?: string | null
+          meta_title_uz?: string | null
           name_ru: string
           name_uz: string
           slug: string
@@ -45,6 +59,13 @@ export type Database = {
           id?: string
           image?: string | null
           is_active?: boolean | null
+          is_followed?: boolean | null
+          is_indexed?: boolean | null
+          meta_description_ru?: string | null
+          meta_description_uz?: string | null
+          meta_keywords?: string | null
+          meta_title_ru?: string | null
+          meta_title_uz?: string | null
           name_ru?: string
           name_uz?: string
           slug?: string

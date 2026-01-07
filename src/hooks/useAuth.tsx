@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-type AppRole = 'admin' | 'editor';
+import { AppRole, hasPermission, canViewModule, RolePermissions, Permission } from '@/lib/permissions';
 
 interface AuthContextType {
   user: User | null;
@@ -10,7 +9,10 @@ interface AuthContextType {
   loading: boolean;
   userRole: AppRole | null;
   isAdmin: boolean;
-  isEditor: boolean;
+  isManager: boolean;
+  isSeller: boolean;
+  hasPermission: (module: keyof RolePermissions, action: keyof Permission) => boolean;
+  canViewModule: (module: keyof RolePermissions) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -64,7 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (!error && data) {
-        setUserRole(data.role as AppRole);
+        // Map 'editor' to 'manager' for backward compatibility
+        const role = data.role === 'editor' ? 'manager' : data.role;
+        setUserRole(role as AppRole);
       } else {
         setUserRole(null);
       }
@@ -105,7 +109,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     userRole,
     isAdmin: userRole === 'admin',
-    isEditor: userRole === 'editor',
+    isManager: userRole === 'manager',
+    isSeller: userRole === 'seller',
+    hasPermission: (module: keyof RolePermissions, action: keyof Permission) => 
+      hasPermission(userRole, module, action),
+    canViewModule: (module: keyof RolePermissions) => 
+      canViewModule(userRole, module),
     signIn,
     signUp,
     signOut,

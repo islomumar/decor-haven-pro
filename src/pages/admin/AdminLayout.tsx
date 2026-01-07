@@ -14,33 +14,50 @@ import {
   Users,
   Shield,
   FileText,
-  Settings2
+  Settings2,
+  LucideIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { RolePermissions, roleDisplayInfo } from '@/lib/permissions';
+import { Badge } from '@/components/ui/badge';
 
-const navItems = [
-  { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
-  { title: 'Buyurtmalar', url: '/admin/orders', icon: ShoppingCart },
-  { title: 'Toifalar', url: '/admin/categories', icon: FolderTree },
-  { title: 'Mahsulotlar', url: '/admin/products', icon: Package },
-  { title: 'Mijozlar', url: '/admin/customers', icon: Users },
-  { title: 'Sayt kontenti', url: '/admin/content', icon: FileText },
-  { title: 'Mavzular', url: '/admin/themes', icon: Palette },
-  { title: 'Adminlar', url: '/admin/admins', icon: Shield },
-  { title: 'Telegram', url: '/admin/settings', icon: Settings },
-  { title: 'Tizim sozlamalari', url: '/admin/system', icon: Settings2 },
+interface NavItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  module: keyof RolePermissions;
+}
+
+const navItems: NavItem[] = [
+  { title: 'Dashboard', url: '/admin', icon: LayoutDashboard, module: 'dashboard' },
+  { title: 'Buyurtmalar', url: '/admin/orders', icon: ShoppingCart, module: 'orders' },
+  { title: 'Toifalar', url: '/admin/categories', icon: FolderTree, module: 'categories' },
+  { title: 'Mahsulotlar', url: '/admin/products', icon: Package, module: 'products' },
+  { title: 'Mijozlar', url: '/admin/customers', icon: Users, module: 'customers' },
+  { title: 'Sayt kontenti', url: '/admin/content', icon: FileText, module: 'siteContent' },
+  { title: 'Mavzular', url: '/admin/themes', icon: Palette, module: 'themes' },
+  { title: 'Adminlar', url: '/admin/admins', icon: Shield, module: 'admins' },
+  { title: 'Telegram', url: '/admin/settings', icon: Settings, module: 'telegram' },
+  { title: 'Tizim sozlamalari', url: '/admin/system', icon: Settings2, module: 'systemSettings' },
 ];
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { canViewModule, userRole, user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/admin') return location.pathname === '/admin';
     return location.pathname.startsWith(path);
   };
+
+  // Filter nav items based on user permissions
+  const filteredNavItems = navItems.filter(item => canViewModule(item.module));
+
+  const roleInfo = userRole ? roleDisplayInfo[userRole] : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,8 +108,16 @@ export default function AdminLayout() {
           </Button>
         </div>
 
+        {/* User info */}
+        {roleInfo && (
+          <div className="p-4 border-b">
+            <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+            <Badge className={cn("mt-1", roleInfo.color)}>{roleInfo.label}</Badge>
+          </div>
+        )}
+
         <nav className="p-4 space-y-2">
-          {navItems.map((item) => (
+          {filteredNavItems.map((item) => (
             <Link
               key={item.url}
               to={item.url}
@@ -132,8 +157,16 @@ export default function AdminLayout() {
             </Link>
           </div>
 
+          {/* User info */}
+          {roleInfo && (
+            <div className="p-4 border-b">
+              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+              <Badge className={cn("mt-1", roleInfo.color)}>{roleInfo.label}</Badge>
+            </div>
+          )}
+
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {navItems.map((item) => (
+            {filteredNavItems.map((item) => (
               <Link
                 key={item.url}
                 to={item.url}
@@ -174,7 +207,7 @@ export default function AdminLayout() {
                 <Bell className="h-5 w-5" />
               </Button>
               <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
-                A
+                {user?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
             </div>
           </header>

@@ -13,9 +13,10 @@ const EditModeContext = createContext<EditModeContextType | undefined>(undefined
 
 export function EditModeProvider({ children }: { children: ReactNode }) {
   const [isEditMode, setIsEditMode] = useState(false);
-  const { isAdmin, isEditor } = useAuth();
+  const { isAdmin, isManager, hasPermission } = useAuth();
   
-  const canEdit = isAdmin || isEditor;
+  // Admin and Manager can edit site content
+  const canEdit = isAdmin || isManager || hasPermission('siteContent', 'edit');
 
   const toggleEditMode = useCallback(() => {
     if (canEdit) {

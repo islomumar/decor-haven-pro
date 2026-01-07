@@ -14,6 +14,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { EditModeToggle } from "@/components/EditModeToggle";
+import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import ProductDetails from "./pages/ProductDetails";
@@ -56,16 +57,56 @@ const App = () => (
                         
                         {/* Admin Routes */}
                         <Route path="/admin" element={<AdminLayout />}>
-                          <Route index element={<Dashboard />} />
-                          <Route path="orders" element={<Orders />} />
-                          <Route path="categories" element={<Categories />} />
-                          <Route path="products" element={<ProductsNew />} />
-                          <Route path="customers" element={<Customers />} />
-                          <Route path="content" element={<SiteContent />} />
-                          <Route path="admins" element={<Admins />} />
-                          <Route path="themes" element={<Themes />} />
-                          <Route path="settings" element={<Settings />} />
-                          <Route path="system" element={<SystemSettings />} />
+                          <Route index element={
+                            <ProtectedRoute module="dashboard">
+                              <Dashboard />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="orders" element={
+                            <ProtectedRoute module="orders">
+                              <Orders />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="categories" element={
+                            <ProtectedRoute module="categories">
+                              <Categories />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="products" element={
+                            <ProtectedRoute module="products">
+                              <ProductsNew />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="customers" element={
+                            <ProtectedRoute module="customers">
+                              <Customers />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="content" element={
+                            <ProtectedRoute module="siteContent">
+                              <SiteContent />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="admins" element={
+                            <ProtectedRoute module="admins">
+                              <Admins />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="themes" element={
+                            <ProtectedRoute module="themes">
+                              <Themes />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="settings" element={
+                            <ProtectedRoute module="telegram">
+                              <Settings />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="system" element={
+                            <ProtectedRoute module="systemSettings">
+                              <SystemSettings />
+                            </ProtectedRoute>
+                          } />
                         </Route>
                       
                       {/* Public Routes */}

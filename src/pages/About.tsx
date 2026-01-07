@@ -1,6 +1,7 @@
 import { Award, Users, Package, MapPin } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
+import { EditableImage } from '@/components/EditableImage';
 
 export default function About() {
   const { language, t } = useLanguage();
@@ -13,9 +14,9 @@ export default function About() {
   ];
 
   const team = [
-    { name: 'Akbar Rahimov', role: language === 'uz' ? 'Asoschisi va direktor' : 'Основатель и директор', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300', nameKey: 'about_team_1_name', roleKey: 'about_team_1_role' },
-    { name: 'Sardor Karimov', role: language === 'uz' ? 'Bosh dizayner' : 'Главный дизайнер', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300', nameKey: 'about_team_2_name', roleKey: 'about_team_2_role' },
-    { name: 'Nilufar Azimova', role: language === 'uz' ? "Sotish bo'limi boshlig'i" : 'Руководитель отдела продаж', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300', nameKey: 'about_team_3_name', roleKey: 'about_team_3_role' },
+    { name: 'Akbar Rahimov', role: language === 'uz' ? 'Asoschisi va direktor' : 'Основатель и директор', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300', nameKey: 'about_team_1_name', roleKey: 'about_team_1_role', imageKey: 'about_team_1_image' },
+    { name: 'Sardor Karimov', role: language === 'uz' ? 'Bosh dizayner' : 'Главный дизайнер', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300', nameKey: 'about_team_2_name', roleKey: 'about_team_2_role', imageKey: 'about_team_2_image' },
+    { name: 'Nilufar Azimova', role: language === 'uz' ? "Sotish bo'limi boshlig'i" : 'Руководитель отдела продаж', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300', nameKey: 'about_team_3_name', roleKey: 'about_team_3_role', imageKey: 'about_team_3_image' },
   ];
 
   return (
@@ -23,10 +24,13 @@ export default function About() {
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] flex items-center">
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920"
+          <EditableImage
+            contentKey="about_hero_image"
+            fallbackSrc="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920"
             alt="Workshop"
             className="w-full h-full object-cover"
+            wrapperClassName="w-full h-full"
+            section="about"
           />
           <div className="absolute inset-0 bg-primary/80" />
         </div>
@@ -130,10 +134,13 @@ export default function About() {
               </p>
             </div>
             <div className="rounded-2xl overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1581539250439-c96689b516dd?w=800"
+              <EditableImage
+                contentKey="about_story_image"
+                fallbackSrc="https://images.unsplash.com/photo-1581539250439-c96689b516dd?w=800"
                 alt="Workshop"
                 className="w-full h-full object-cover"
+                wrapperClassName="w-full h-full"
+                section="about"
               />
             </div>
           </div>
@@ -209,7 +216,15 @@ export default function About() {
             {team.map((member, i) => (
               <div key={i} className="text-center">
                 <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden">
-                  <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                  <EditableImage
+                    contentKey={member.imageKey}
+                    fallbackSrc={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                    wrapperClassName="w-full h-full"
+                    section="about"
+                    aspectRatio="square"
+                  />
                 </div>
                 <h4 className="font-medium text-lg">
                   <EditableText 

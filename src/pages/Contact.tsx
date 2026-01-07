@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
+import { EditableText } from '@/components/EditableText';
 
 export default function Contact() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
@@ -29,23 +30,51 @@ export default function Contact() {
   };
 
   const contactInfo = [
-    { icon: MapPin, label: t.contact.info.address, value: t.contact.info.addressValue },
-    { icon: Phone, label: t.contact.info.phone, value: '+998 90 123 45 67', href: 'tel:+998901234567' },
-    { icon: Mail, label: t.contact.info.email, value: 'info@mebelusta.uz', href: 'mailto:info@mebelusta.uz' },
-    { icon: Clock, label: t.contact.info.workingHours, value: 'Du-Ju: 9:00-18:00, Sha: 10:00-16:00' },
+    { icon: MapPin, labelKey: 'contact_address_label', valueKey: 'contact_address_value', label: t.contact.info.address, value: t.contact.info.addressValue },
+    { icon: Phone, labelKey: 'contact_phone_label', valueKey: 'contact_phone_value', label: t.contact.info.phone, value: '+998 90 123 45 67', href: 'tel:+998901234567' },
+    { icon: Mail, labelKey: 'contact_email_label', valueKey: 'contact_email_value', label: t.contact.info.email, value: 'info@mebelusta.uz', href: 'mailto:info@mebelusta.uz' },
+    { icon: Clock, labelKey: 'contact_hours_label', valueKey: 'contact_hours_value', label: t.contact.info.workingHours, value: 'Du-Ju: 9:00-18:00, Sha: 10:00-16:00' },
   ];
 
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h1 className="font-serif text-4xl font-bold mb-4">{t.contact.title}</h1>
-          <p className="text-muted-foreground text-lg">{t.contact.subtitle}</p>
+          <h1 className="font-serif text-4xl font-bold mb-4">
+            <EditableText 
+              contentKey="contact_title" 
+              fallback={t.contact.title}
+              as="span"
+              className="font-serif text-4xl font-bold"
+              section="contact"
+              field="title"
+            />
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            <EditableText 
+              contentKey="contact_subtitle" 
+              fallback={t.contact.subtitle}
+              as="span"
+              className="text-lg"
+              section="contact"
+              field="subtitle"
+            />
+          </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
           <div className="bg-card p-8 rounded-2xl shadow-warm">
+            <h2 className="font-serif text-2xl font-bold mb-6">
+              <EditableText 
+                contentKey="contact_form_title" 
+                fallback={language === 'uz' ? "Bizga yozing" : "Напишите нам"}
+                as="span"
+                className="font-serif text-2xl font-bold"
+                section="contact"
+                field="form_title"
+              />
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="text-sm font-medium mb-2 block">{t.contact.form.name}</label>
@@ -93,17 +122,53 @@ export default function Contact() {
 
           {/* Contact Info */}
           <div className="space-y-6">
+            <h2 className="font-serif text-2xl font-bold">
+              <EditableText 
+                contentKey="contact_info_title" 
+                fallback={language === 'uz' ? "Bog'lanish ma'lumotlari" : "Контактная информация"}
+                as="span"
+                className="font-serif text-2xl font-bold"
+                section="contact"
+                field="info_title"
+              />
+            </h2>
+            
             {contactInfo.map((item, i) => (
               <div key={i} className="flex items-start gap-4 p-4 bg-card rounded-xl shadow-warm">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                   <item.icon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium mb-1">{item.label}</h4>
+                  <h4 className="font-medium mb-1">
+                    <EditableText 
+                      contentKey={item.labelKey} 
+                      fallback={item.label}
+                      as="span"
+                      className="font-medium"
+                      section="contact"
+                      field={item.labelKey}
+                    />
+                  </h4>
                   {item.href ? (
-                    <a href={item.href} className="text-muted-foreground hover:text-primary transition-colors">{item.value}</a>
+                    <a href={item.href} className="text-muted-foreground hover:text-primary transition-colors">
+                      <EditableText 
+                        contentKey={item.valueKey} 
+                        fallback={item.value}
+                        as="span"
+                        section="contact"
+                        field={item.valueKey}
+                      />
+                    </a>
                   ) : (
-                    <p className="text-muted-foreground">{item.value}</p>
+                    <p className="text-muted-foreground">
+                      <EditableText 
+                        contentKey={item.valueKey} 
+                        fallback={item.value}
+                        as="span"
+                        section="contact"
+                        field={item.valueKey}
+                      />
+                    </p>
                   )}
                 </div>
               </div>

@@ -16,7 +16,7 @@ export default function Index() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[600px] flex items-center">
+      <section id="hero" className="relative h-[80vh] min-h-[600px] flex items-center">
         <div className="absolute inset-0 z-0">
           <EditableImage
             contentKey="hero_background_image"

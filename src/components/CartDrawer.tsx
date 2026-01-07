@@ -237,10 +237,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 asChild
                 size="lg"
                 className="w-full rounded-full h-12 text-base font-semibold"
+                onClick={onClose}
               >
-                <a href={telegramLink} target="_blank" rel="noopener noreferrer">
+                <Link to="/checkout">
                   {language === 'uz' ? 'Buyurtma berish' : 'Оформить заказ'}
-                </a>
+                </Link>
               </Button>
               
               <Button

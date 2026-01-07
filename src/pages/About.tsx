@@ -23,16 +23,16 @@ export default function About() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[400px] flex items-center">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-0">
           <EditableImage
             contentKey="about_hero_image"
             fallbackSrc="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920"
             alt="Workshop"
             className="w-full h-full object-cover"
-            wrapperClassName="w-full h-full"
+            wrapperClassName="w-full h-full relative z-10"
             section="about"
           />
-          <div className="absolute inset-0 bg-primary/80" />
+          <div className="absolute inset-0 bg-primary/80 pointer-events-none z-20" />
         </div>
         <div className="container mx-auto px-4 relative z-10 text-center">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary-foreground mb-4">

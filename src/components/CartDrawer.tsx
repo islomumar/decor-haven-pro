@@ -19,16 +19,23 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   // Lock body scroll when open, restore when closed
   useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    
     if (isOpen) {
+      // Add class and lock scroll
+      document.body.classList.add('cart-drawer-open');
       document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px'; // Prevent layout shift
     } else {
-      document.body.style.overflow = 'auto';
+      // Remove class and restore scroll
+      document.body.classList.remove('cart-drawer-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     }
     
+    // Cleanup on unmount
     return () => {
-      document.body.style.overflow = originalOverflow || 'auto';
+      document.body.classList.remove('cart-drawer-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
     };
   }, [isOpen]);
 
@@ -64,33 +71,32 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     ? `${telegramNumber}?text=${buildTelegramMessage()}`
     : `https://t.me/${telegramNumber.replace('@', '')}?text=${buildTelegramMessage()}`;
 
+  // Don't render if not open (for cleaner animations)
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay - click to close */}
       <div
-        className={cn(
-          "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Drawer - Full height on desktop, bottom sheet on mobile */}
+      {/* Drawer */}
       <div
         className={cn(
-          "fixed z-50 bg-card shadow-2xl flex flex-col transition-transform duration-300 ease-out",
+          "fixed z-[101] bg-card shadow-2xl flex flex-col",
           // Desktop styles - full height right drawer
-          "md:top-0 md:right-0 md:h-screen md:max-h-screen md:w-[420px] md:max-w-[90vw]",
+          "md:top-0 md:right-0 md:h-screen md:w-[420px] md:max-w-[90vw] md:animate-slide-in-right",
           // Mobile styles - bottom sheet
-          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:h-[90vh] max-md:max-h-[90vh] max-md:rounded-t-3xl",
-          // Transform states
-          isOpen 
-            ? "md:translate-x-0 max-md:translate-y-0" 
-            : "md:translate-x-full max-md:translate-y-full"
+          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:h-[85vh] max-md:rounded-t-3xl max-md:animate-fade-in"
         )}
       >
-        {/* Header - Fixed */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-border bg-card">
+        {/* Header - Fixed at top, always visible */}
+        <div className="sticky top-0 z-10 flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-primary" />
@@ -104,17 +110,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </p>
             </div>
           </div>
+          {/* Close button - always visible */}
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-            aria-label="Close"
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
+            aria-label="Close cart"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Product List - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Product List - Scrollable area only */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
@@ -220,9 +227,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Footer - Sticky CTA */}
+        {/* Footer - Sticky at bottom, always visible */}
         {items.length > 0 && (
-          <div className="flex-shrink-0 border-t border-border bg-card px-6 py-5 space-y-4">
+          <div className="sticky bottom-0 z-10 flex-shrink-0 border-t border-border bg-card px-6 py-4 space-y-4">
             {/* Total */}
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground font-medium">

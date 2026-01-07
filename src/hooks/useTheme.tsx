@@ -107,22 +107,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const seedDefaultThemes = async () => {
     try {
-      const themesToInsert = defaultThemes.map((theme) => ({
-        name: theme.name,
-        slug: theme.slug,
-        color_palette: theme.colorPalette as unknown as Record<string, unknown>,
-        typography: theme.typography as unknown as Record<string, unknown>,
-        component_styles: theme.componentStyles as unknown as Record<string, unknown>,
-        layout_settings: theme.layoutSettings as unknown as Record<string, unknown>,
-        is_active: theme.slug === 'warm-furniture',
-        is_dark: theme.isDark
-      }));
-
-      const { error } = await supabase
-        .from('themes')
-        .insert(themesToInsert);
-
-      if (error) throw error;
+      for (const theme of defaultThemes) {
+        const { error } = await supabase
+          .from('themes')
+          .insert({
+            name: theme.name,
+            slug: theme.slug,
+            color_palette: JSON.parse(JSON.stringify(theme.colorPalette)),
+            typography: JSON.parse(JSON.stringify(theme.typography)),
+            component_styles: JSON.parse(JSON.stringify(theme.componentStyles)),
+            layout_settings: JSON.parse(JSON.stringify(theme.layoutSettings)),
+            is_active: theme.slug === 'warm-furniture',
+            is_dark: theme.isDark
+          });
+        
+        if (error) console.error('Error inserting theme:', theme.name, error);
+      }
 
       await fetchThemes();
     } catch (error) {

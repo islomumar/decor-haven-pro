@@ -23,6 +23,55 @@
   </head>
 
   <body>
+    <script>
+      // Inline theme initialization to prevent FOUC
+      (function() {
+        try {
+          var cached = localStorage.getItem('furniture-active-theme');
+          if (cached) {
+            var theme = JSON.parse(cached);
+            var root = document.documentElement;
+            
+            // Apply colors
+            if (theme.colorPalette) {
+              Object.keys(theme.colorPalette).forEach(function(key) {
+                var cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                root.style.setProperty('--' + cssVar, theme.colorPalette[key]);
+              });
+            }
+            
+            // Apply typography
+            if (theme.typography) {
+              if (theme.typography.fontSans) root.style.setProperty('--font-sans', theme.typography.fontSans);
+              if (theme.typography.fontSerif) root.style.setProperty('--font-serif', theme.typography.fontSerif);
+              if (theme.typography.fontHeading) root.style.setProperty('--font-heading', theme.typography.fontHeading);
+            }
+            
+            // Apply component styles
+            if (theme.componentStyles) {
+              if (theme.componentStyles.borderRadius) root.style.setProperty('--radius', theme.componentStyles.borderRadius);
+              if (theme.componentStyles.buttonRadius) root.style.setProperty('--button-radius', theme.componentStyles.buttonRadius);
+              if (theme.componentStyles.cardRadius) root.style.setProperty('--card-radius', theme.componentStyles.cardRadius);
+              if (theme.componentStyles.shadowSm) root.style.setProperty('--shadow-sm', theme.componentStyles.shadowSm);
+              if (theme.componentStyles.shadowMd) root.style.setProperty('--shadow-md', theme.componentStyles.shadowMd);
+              if (theme.componentStyles.shadowLg) root.style.setProperty('--shadow-lg', theme.componentStyles.shadowLg);
+            }
+            
+            // Apply layout settings
+            if (theme.layoutSettings) {
+              if (theme.layoutSettings.containerMaxWidth) root.style.setProperty('--container-max-width', theme.layoutSettings.containerMaxWidth);
+              if (theme.layoutSettings.sectionSpacing) root.style.setProperty('--section-spacing', theme.layoutSettings.sectionSpacing);
+              if (theme.layoutSettings.cardPadding) root.style.setProperty('--card-padding', theme.layoutSettings.cardPadding);
+            }
+            
+            // Dark mode
+            if (theme.isDark) {
+              root.classList.add('dark');
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

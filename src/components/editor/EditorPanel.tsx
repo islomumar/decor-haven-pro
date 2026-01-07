@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Upload, Loader2, Type, Image as ImageIcon, Check } from 'lucide-react';
+import { X, Upload, Loader2, Type, Image as ImageIcon, Check, Link2 } from 'lucide-react';
 import { useEditMode } from '@/hooks/useEditMode';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -149,11 +149,17 @@ export function EditorPanel() {
           <div className="flex items-center gap-2">
             {selectedElement?.type === 'text' ? (
               <Type className="h-4 w-4 text-primary" />
+            ) : selectedElement?.type === 'link' ? (
+              <Link2 className="h-4 w-4 text-primary" />
             ) : (
               <ImageIcon className="h-4 w-4 text-primary" />
             )}
             <h3 className="font-semibold">
-              {selectedElement?.type === 'text' ? "Matnni tahrirlash" : "Rasmni tahrirlash"}
+              {selectedElement?.type === 'text' 
+                ? "Matnni tahrirlash" 
+                : selectedElement?.type === 'link'
+                  ? "Havolani tahrirlash"
+                  : "Rasmni tahrirlash"}
             </h3>
           </div>
           <button 
@@ -200,6 +206,31 @@ export function EditorPanel() {
                   <p className="text-xs text-muted-foreground">
                     Hozirgi til: {language === 'uz' ? "O'zbek" : "Русский"}
                   </p>
+                </div>
+              ) : selectedElement.type === 'link' ? (
+                /* Link Editor */
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Havola URL</label>
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder="https://example.com"
+                    type="url"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    To'liq URL manzilini kiriting (https:// bilan)
+                  </p>
+                  {editValue && (
+                    <a 
+                      href={editValue} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Link2 className="h-3 w-3" />
+                      Havolani tekshirish
+                    </a>
+                  )}
                 </div>
               ) : (
                 /* Image Editor */
@@ -260,7 +291,7 @@ export function EditorPanel() {
         </div>
 
         {/* Footer */}
-        {selectedElement?.type === 'text' && (
+        {(selectedElement?.type === 'text' || selectedElement?.type === 'link') && (
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-card border-t">
             <Button 
               onClick={handleSaveText}

@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect 
 import { useAuth } from './useAuth';
 
 interface SelectedElement {
-  type: 'text' | 'image';
+  type: 'text' | 'image' | 'link';
   contentKey: string;
   section?: string;
   currentValue: string;

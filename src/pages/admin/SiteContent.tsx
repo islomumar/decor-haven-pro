@@ -1,231 +1,154 @@
-import { useEffect, useState } from 'react';
-import { Save, FileText, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { ExternalLink, Eye, Pencil, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-
-interface ContentItem {
-  id: string;
-  key: string;
-  value_uz: string | null;
-  value_ru: string | null;
-  content_type: string;
-  page: string | null;
-  section: string | null;
-}
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SiteContent() {
-  const [content, setContent] = useState<ContentItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editedContent, setEditedContent] = useState<Record<string, { value_uz: string; value_ru: string }>>({});
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchContent();
-  }, []);
-
-  const fetchContent = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_content')
-        .select('*')
-        .order('page', { ascending: true });
-
-      if (error) throw error;
-      
-      setContent(data || []);
-      
-      // Initialize edited content
-      const initial: Record<string, { value_uz: string; value_ru: string }> = {};
-      data?.forEach((item) => {
-        initial[item.key] = {
-          value_uz: item.value_uz || '',
-          value_ru: item.value_ru || '',
-        };
-      });
-      setEditedContent(initial);
-    } catch (error) {
-      console.error('Error:', error);
-      toast({ variant: 'destructive', title: 'Xatolik', description: 'Kontentni yuklashda xatolik' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (key: string, lang: 'value_uz' | 'value_ru', value: string) => {
-    setEditedContent((prev) => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [lang]: value,
-      },
-    }));
-  };
-
-  const saveContent = async (key: string) => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('site_content')
-        .update({
-          value_uz: editedContent[key].value_uz,
-          value_ru: editedContent[key].value_ru,
-        })
-        .eq('key', key);
-
-      if (error) throw error;
-      toast({ title: 'Muvaffaqiyat', description: 'Kontent saqlandi' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const saveAllContent = async () => {
-    setSaving(true);
-    try {
-      for (const item of content) {
-        await supabase
-          .from('site_content')
-          .update({
-            value_uz: editedContent[item.key].value_uz,
-            value_ru: editedContent[item.key].value_ru,
-          })
-          .eq('key', item.key);
-      }
-      toast({ title: 'Muvaffaqiyat', description: 'Barcha kontent saqlandi' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const groupedContent = content.reduce((acc, item) => {
-    const page = item.page || 'other';
-    if (!acc[page]) acc[page] = [];
-    acc[page].push(item);
-    return acc;
-  }, {} as Record<string, ContentItem[]>);
-
-  const pageLabels: Record<string, string> = {
-    homepage: 'Bosh sahifa',
-    about: 'Biz haqimizda',
-    contact: 'Aloqa',
-    footer: 'Footer',
-    other: 'Boshqa',
-  };
-
-  const keyLabels: Record<string, string> = {
-    hero_title: 'Hero sarlavha',
-    hero_subtitle: 'Hero tavsif',
-    hero_cta: 'Hero tugma',
-    promo_title: 'Aksiya sarlavha',
-    promo_subtitle: 'Aksiya tavsif',
-    about_story: 'Tarix sarlavha',
-    about_story_text: 'Tarix matni',
-    footer_description: 'Footer tavsif',
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Sayt kontenti</h1>
-          <p className="text-muted-foreground">Saytdagi barcha matnlarni tahrirlang</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchContent}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Yangilash
-          </Button>
-          <Button onClick={saveAllContent} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            Hammasini saqlash
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Sayt kontenti</h1>
+        <p className="text-muted-foreground">Saytdagi barcha matnlarni vizual tahrirlang</p>
       </div>
 
-      <Tabs defaultValue="homepage">
-        <TabsList>
-          {Object.keys(groupedContent).map((page) => (
-            <TabsTrigger key={page} value={page}>
-              {pageLabels[page] || page}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Yangi vizual tahrirlash tizimi</AlertTitle>
+        <AlertDescription>
+          Endi sayt kontentini to'g'ridan-to'g'ri sayt sahifalarida tahrirlashingiz mumkin. 
+          Saytga o'ting va "Tahrirlash" tugmasini bosing.
+        </AlertDescription>
+      </Alert>
 
-        {Object.entries(groupedContent).map(([page, items]) => (
-          <TabsContent key={page} value={page} className="space-y-4">
-            {items.map((item) => (
-              <Card key={item.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <CardTitle className="text-base">{keyLabels[item.key] || item.key}</CardTitle>
-                    </div>
-                    <Button size="sm" onClick={() => saveContent(item.key)} disabled={saving}>
-                      <Save className="h-3 w-3 mr-1" />
-                      Saqlash
-                    </Button>
-                  </div>
-                  <CardDescription>Kalit: {item.key}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>O'zbekcha</Label>
-                      {item.content_type === 'text' && (item.value_uz?.length || 0) < 100 ? (
-                        <Input
-                          value={editedContent[item.key]?.value_uz || ''}
-                          onChange={(e) => handleChange(item.key, 'value_uz', e.target.value)}
-                        />
-                      ) : (
-                        <Textarea
-                          value={editedContent[item.key]?.value_uz || ''}
-                          onChange={(e) => handleChange(item.key, 'value_uz', e.target.value)}
-                          rows={3}
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Ruscha</Label>
-                      {item.content_type === 'text' && (item.value_ru?.length || 0) < 100 ? (
-                        <Input
-                          value={editedContent[item.key]?.value_ru || ''}
-                          onChange={(e) => handleChange(item.key, 'value_ru', e.target.value)}
-                        />
-                      ) : (
-                        <Textarea
-                          value={editedContent[item.key]?.value_ru || ''}
-                          onChange={(e) => handleChange(item.key, 'value_ru', e.target.value)}
-                          rows={3}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-        ))}
-      </Tabs>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Visual Editor Card */}
+        <Card className="border-2 border-primary">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Pencil className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Vizual tahrirlash</CardTitle>
+                <CardDescription>Kontentni to'g'ridan-to'g'ri saytda tahrirlang</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Saytga o'ting va admin sifatida tizimga kirganingizda pastki o'ng burchakda 
+              "Tahrirlash" tugmasi paydo bo'ladi. Uni bosib, istalgan matnni bevosita tahrirlang.
+            </p>
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Qanday ishlaydi:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Saytga o'ting
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  "Tahrirlash" tugmasini bosing
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Tahrir qilinadigan elementlar ajratiladi
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  ✏️ ikonasini bosib matnni o'zgartiring
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  UZ/RU tilini tanlang va alohida tahrirlang
+                </li>
+              </ul>
+            </div>
+            <Button asChild className="w-full">
+              <Link to="/" target="_blank">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Saytga o'tish
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Preview Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                <Eye className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <CardTitle>Ko'rish rejimi</CardTitle>
+                <CardDescription>Saytni mehmonlar ko'rinishida ko'ring</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              "Ko'rish rejimi"ga o'tib, sayt mehmonlar uchun qanday ko'rinishda ekanligini 
+              tekshiring. Bu rejimda tahrirlash imkoniyati yo'q.
+            </p>
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Tahrirlanadigan seksiyalar:</h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-background rounded text-xs">Hero sarlavha</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Hero tavsif</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Aksiya</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Toifalar</span>
+                <span className="px-2 py-1 bg-background rounded text-xs">Footer</span>
+              </div>
+            </div>
+            <Button variant="outline" asChild className="w-full">
+              <Link to="/">
+                <Eye className="mr-2 h-4 w-4" />
+                Saytni ko'rish
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Vizual tahrirlash qo'llanmasi</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="text-center p-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">1️⃣</span>
+              </div>
+              <h4 className="font-medium mb-1">Saytga o'ting</h4>
+              <p className="text-sm text-muted-foreground">
+                Admin sifatida tizimga kirgan holda bosh sahifaga o'ting
+              </p>
+            </div>
+            <div className="text-center p-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">2️⃣</span>
+              </div>
+              <h4 className="font-medium mb-1">Tahrirlash rejimini yoqing</h4>
+              <p className="text-sm text-muted-foreground">
+                Pastki o'ng burchakdagi "Tahrirlash" tugmasini bosing
+              </p>
+            </div>
+            <div className="text-center p-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">3️⃣</span>
+              </div>
+              <h4 className="font-medium mb-1">Matnlarni o'zgartiring</h4>
+              <p className="text-sm text-muted-foreground">
+                ✏️ ikonasini bosib matnni tahrirlang va saqlang
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

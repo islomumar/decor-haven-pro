@@ -1,59 +1,134 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ProductCard } from '@/components/ProductCard';
-import { products, categories, materials } from '@/lib/data';
+import { useProducts, useCategories, MATERIALS, ProductFilters } from '@/hooks/useProducts';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useSEO } from '@/hooks/useSEO';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
+
+const PAGE_SIZE = 24;
 
 export default function Catalog() {
   const { language, t } = useLanguage();
+  const { settings } = useSystemSettings();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get initial values from URL
+  const initialCategory = searchParams.get('category') || 'all';
+  const initialPage = parseInt(searchParams.get('page') || '1', 10);
+  
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedMaterial, setSelectedMaterial] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const [currentPage, setCurrentPage] = useState(initialPage);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      const name = language === 'uz' ? product.name_uz : product.name_ru;
-      const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
-      const matchesMaterial = selectedMaterial === 'all' || product.materials.some(m => m.toLowerCase().includes(selectedMaterial.toLowerCase()));
-      
-      let matchesPrice = true;
-      if (priceRange === 'under5') matchesPrice = product.price < 5000000;
-      else if (priceRange === '5to10') matchesPrice = product.price >= 5000000 && product.price < 10000000;
-      else if (priceRange === 'over10') matchesPrice = product.price >= 10000000;
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1); // Reset to first page on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-      return matchesSearch && matchesCategory && matchesMaterial && matchesPrice && product.active;
-    });
-  }, [search, selectedCategory, selectedMaterial, priceRange, language]);
+  // Build filters
+  const filters: ProductFilters = useMemo(() => {
+    const f: ProductFilters = {
+      isActive: true,
+    };
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    if (debouncedSearch) f.search = debouncedSearch;
+    if (selectedCategory !== 'all') f.categoryId = selectedCategory;
+    if (selectedMaterial !== 'all') f.material = selectedMaterial;
+
+    if (priceRange === 'under5') {
+      f.priceMax = 5000000;
+    } else if (priceRange === '5to10') {
+      f.priceMin = 5000000;
+      f.priceMax = 10000000;
+    } else if (priceRange === 'over10') {
+      f.priceMin = 10000000;
+    }
+
+    return f;
+  }, [debouncedSearch, selectedCategory, selectedMaterial, priceRange]);
+
+  // Fetch products with server-side pagination
+  const { products, totalCount, totalPages, loading } = useProducts(currentPage, filters, PAGE_SIZE);
+  
+  // Fetch categories
+  const { categories } = useCategories();
+
+  // SEO - canonical to page 1 for paginated pages
+  useSEO({
+    title: `${t.catalog.title} | ${settings.site_name || 'Mebel Store'}`,
+    description: t.catalog.title,
+    canonical: currentPage > 1 ? '/catalog' : undefined,
+  });
+
+  // Update URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'all') params.set('category', selectedCategory);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    setSearchParams(params, { replace: true });
+  }, [selectedCategory, currentPage, setSearchParams]);
 
   const clearFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setSelectedCategory('all');
     setSelectedMaterial('all');
     setPriceRange('all');
+    setCurrentPage(1);
     setSearchParams({});
   };
 
-  const hasActiveFilters = search || selectedCategory !== 'all' || selectedMaterial !== 'all' || priceRange !== 'all';
+  const hasActiveFilters = debouncedSearch || selectedCategory !== 'all' || selectedMaterial !== 'all' || priceRange !== 'all';
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Generate pagination numbers
+  const getPaginationNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+
+      if (currentPage > 3) pages.push('ellipsis');
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) pages.push(i);
+
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   const FilterContent = () => (
     <div className="space-y-6">
       {/* Category */}
       <div>
         <label className="text-sm font-medium mb-2 block">{t.catalog.category}</label>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setCurrentPage(1); }}>
           <SelectTrigger>
             <SelectValue placeholder={t.catalog.allCategories} />
           </SelectTrigger>
@@ -71,7 +146,7 @@ export default function Catalog() {
       {/* Price Range */}
       <div>
         <label className="text-sm font-medium mb-2 block">{t.catalog.priceRange}</label>
-        <Select value={priceRange} onValueChange={setPriceRange}>
+        <Select value={priceRange} onValueChange={(v) => { setPriceRange(v); setCurrentPage(1); }}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -87,13 +162,13 @@ export default function Catalog() {
       {/* Material */}
       <div>
         <label className="text-sm font-medium mb-2 block">{t.catalog.material}</label>
-        <Select value={selectedMaterial} onValueChange={setSelectedMaterial}>
+        <Select value={selectedMaterial} onValueChange={(v) => { setSelectedMaterial(v); setCurrentPage(1); }}>
           <SelectTrigger>
             <SelectValue placeholder={t.catalog.allMaterials} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t.catalog.allMaterials}</SelectItem>
-            {materials.map(mat => (
+            {MATERIALS.map(mat => (
               <SelectItem key={mat.id} value={mat.id}>
                 {language === 'uz' ? mat.name_uz : mat.name_ru}
               </SelectItem>
@@ -156,30 +231,73 @@ export default function Catalog() {
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-sm text-muted-foreground mb-4">
-              {t.catalog.showing} {paginatedProducts.length} {t.catalog.of} {filteredProducts.length} {t.catalog.products}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Yuklanmoqda...
+                </span>
+              ) : (
+                <>
+                  {t.catalog.showing} {products.length} {t.catalog.of} {totalCount} {t.catalog.products}
+                </>
+              )}
             </p>
 
-            {paginatedProducts.length > 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-warm animate-pulse">
+                    <div className="aspect-[4/3] bg-muted" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {paginatedProducts.map(product => (
+                  {products.map(product => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-8">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <Button
-                        key={i}
-                        variant={currentPage === i + 1 ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setCurrentPage(i + 1)}
-                      >
-                        {i + 1}
-                      </Button>
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {getPaginationNumbers().map((page, idx) => (
+                      page === 'ellipsis' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </Button>
+                      )
                     ))}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 )}
               </>

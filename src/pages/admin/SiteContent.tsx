@@ -104,7 +104,7 @@ export default function SiteContent() {
         isFullscreen ? "fixed inset-0 z-50 bg-background" : "h-[calc(100vh-8rem)]"
       )}>
         {/* Toolbar */}
-        <div className="flex items-center justify-between gap-4 p-3 border-b bg-card">
+        <div className="flex items-center justify-between gap-2 p-3 border-b bg-card overflow-x-auto">
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
@@ -132,13 +132,13 @@ export default function SiteContent() {
           </div>
 
           {/* Page Selector */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1 flex-shrink-0">
             {pages.map(page => (
               <button
                 key={page.path}
                 onClick={() => setCurrentPath(page.path)}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                  "px-2 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap",
                   currentPath === page.path
                     ? "bg-background shadow-sm text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -150,7 +150,7 @@ export default function SiteContent() {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Device Size Toggle */}
             <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               <button

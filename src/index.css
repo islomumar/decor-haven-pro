@@ -2,102 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Warm Neutral Furniture Website Design System */
+/* Theme-driven Design System - No hardcoded defaults */
+/* All values are set dynamically via CSS variables from the active theme */
 
 @layer base {
   :root {
-    --background: 30 20% 96%;
-    --foreground: 25 30% 20%;
-
-    --card: 30 25% 98%;
-    --card-foreground: 25 30% 20%;
-
-    --popover: 30 25% 98%;
-    --popover-foreground: 25 30% 20%;
-
-    --primary: 30 25% 35%;
-    --primary-foreground: 30 20% 96%;
-
-    --secondary: 35 20% 90%;
-    --secondary-foreground: 25 30% 25%;
-
-    --muted: 30 15% 92%;
-    --muted-foreground: 25 15% 45%;
-
-    --accent: 35 40% 55%;
-    --accent-foreground: 30 20% 96%;
-
+    /* These are placeholder values - actual values come from active theme */
+    /* Colors - will be overwritten by theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 20%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 30 20% 88%;
-    --input: 30 20% 88%;
-    --ring: 30 25% 35%;
-
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 20%;
     --radius: 0.75rem;
 
-    /* Custom furniture theme colors */
-    --warm-cream: 35 30% 95%;
-    --warm-beige: 30 25% 88%;
-    --warm-brown: 25 30% 45%;
-    --dark-wood: 25 35% 22%;
-    --gold-accent: 40 50% 60%;
-    --sage-green: 90 15% 45%;
+    /* Sidebar - will be overwritten by theme */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 0 0% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 20%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 20%;
 
-    --sidebar-background: 30 20% 96%;
-    --sidebar-foreground: 25 30% 25%;
-    --sidebar-primary: 30 25% 35%;
-    --sidebar-primary-foreground: 30 20% 96%;
-    --sidebar-accent: 35 20% 90%;
-    --sidebar-accent-foreground: 25 30% 25%;
-    --sidebar-border: 30 20% 88%;
-    --sidebar-ring: 30 25% 35%;
+    /* Custom theme tokens - will be overwritten by theme */
+    --warm-cream: 0 0% 98%;
+    --warm-beige: 0 0% 94%;
+    --warm-brown: 0 0% 40%;
+    --dark-wood: 0 0% 20%;
+    --gold-accent: 0 0% 60%;
+    --sage-green: 0 0% 50%;
+
+    /* Typography - will be overwritten by theme */
+    --font-sans: system-ui, sans-serif;
+    --font-serif: Georgia, serif;
+    --font-heading: Georgia, serif;
+
+    /* Component styles - will be overwritten by theme */
+    --button-radius: 0.5rem;
+    --card-radius: 0.75rem;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+
+    /* Layout - will be overwritten by theme */
+    --container-max-width: 1280px;
+    --section-spacing: 4rem;
+    --card-padding: 1.5rem;
   }
 
   .dark {
-    --background: 25 25% 10%;
-    --foreground: 30 15% 90%;
-
-    --card: 25 20% 14%;
-    --card-foreground: 30 15% 90%;
-
-    --popover: 25 20% 14%;
-    --popover-foreground: 30 15% 90%;
-
-    --primary: 35 40% 55%;
-    --primary-foreground: 25 25% 10%;
-
-    --secondary: 25 20% 20%;
-    --secondary-foreground: 30 15% 90%;
-
-    --muted: 25 15% 18%;
-    --muted-foreground: 30 10% 60%;
-
-    --accent: 40 50% 55%;
-    --accent-foreground: 25 25% 10%;
-
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 80%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 95%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 80%;
 
-    --border: 25 15% 20%;
-    --input: 25 15% 20%;
-    --ring: 35 40% 55%;
-
-    --warm-cream: 25 20% 15%;
-    --warm-beige: 25 15% 20%;
-    --warm-brown: 30 25% 55%;
-    --dark-wood: 30 20% 75%;
-    --gold-accent: 40 50% 55%;
-    --sage-green: 90 15% 50%;
-
-    --sidebar-background: 25 25% 10%;
-    --sidebar-foreground: 30 15% 90%;
-    --sidebar-primary: 35 40% 55%;
-    --sidebar-primary-foreground: 25 25% 10%;
-    --sidebar-accent: 25 20% 20%;
-    --sidebar-accent-foreground: 30 15% 90%;
-    --sidebar-border: 25 15% 20%;
-    --sidebar-ring: 35 40% 55%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 0% 80%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 80%;
   }
 }
 
@@ -108,11 +105,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: var(--font-heading);
   }
 }
 

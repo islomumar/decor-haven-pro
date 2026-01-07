@@ -56,6 +56,26 @@ export default function Settings() {
   };
 
   const saveTelegramSettings = async () => {
+    // Validate bot token format
+    if (telegram.bot_token && !/^\d+:[A-Za-z0-9_-]+$/.test(telegram.bot_token)) {
+      toast({
+        title: 'Xatolik',
+        description: 'Bot token formati noto\'g\'ri. Format: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate chat ID format
+    if (telegram.chat_id && !/^-?\d+$/.test(telegram.chat_id)) {
+      toast({
+        title: 'Xatolik',
+        description: 'Chat ID faqat raqamlardan iborat bo\'lishi kerak',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const updates = [
@@ -65,12 +85,27 @@ export default function Settings() {
       ];
 
       for (const update of updates) {
-        const { error } = await supabase
+        // Try to update first
+        const { data: existing } = await supabase
           .from('settings')
-          .update({ value: update.value })
-          .eq('key', update.key);
+          .select('id')
+          .eq('key', update.key)
+          .single();
 
-        if (error) throw error;
+        if (existing) {
+          // Update existing
+          const { error } = await supabase
+            .from('settings')
+            .update({ value: update.value, updated_at: new Date().toISOString() })
+            .eq('key', update.key);
+          if (error) throw error;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from('settings')
+            .insert({ key: update.key, value: update.value });
+          if (error) throw error;
+        }
       }
 
       toast({
@@ -99,32 +134,37 @@ export default function Settings() {
       return;
     }
 
+    if (!telegram.enabled) {
+      toast({
+        title: 'Xatolik',
+        description: 'Avval "Telegram xabarlarini yoqish" tugmasini yoqing',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // First save settings to make sure they're in the database
+    await saveTelegramSettings();
+
     setTesting(true);
     setTestResult(null);
 
     try {
-      const response = await fetch(
-        `https://api.telegram.org/bot${telegram.bot_token}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: telegram.chat_id,
-            text: '✅ Test xabar - Furniture Admin Panel bilan aloqa o\'rnatildi!',
-          }),
-        }
-      );
+      // Call server-side edge function (keeps bot token secure)
+      const { data, error } = await supabase.functions.invoke('send-telegram', {
+        body: { type: 'test' },
+      });
 
-      const result = await response.json();
+      if (error) throw error;
 
-      if (result.ok) {
+      if (data?.success) {
         setTestResult('success');
         toast({
           title: 'Muvaffaqiyat',
           description: 'Telegram ulanishi muvaffaqiyatli!',
         });
       } else {
-        throw new Error(result.description);
+        throw new Error(data?.error || 'Telegram xabar yuborishda xatolik');
       }
     } catch (error: any) {
       setTestResult('error');

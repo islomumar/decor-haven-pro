@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Theme, defaultThemes } from '@/lib/themes';
 
 const THEME_CACHE_KEY = 'furniture-active-theme';
+const THEME_READY_KEY = 'furniture-theme-ready';
 
 interface ThemeContextType {
   currentTheme: Theme | null;
   themes: Theme[];
   isLoading: boolean;
+  isThemeReady: boolean;
   setActiveTheme: (themeId: string) => Promise<void>;
   previewTheme: (theme: Theme) => void;
   resetPreview: () => void;
@@ -21,6 +23,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const cacheTheme = (theme: Theme) => {
   try {
     localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
+    localStorage.setItem(THEME_READY_KEY, 'true');
   } catch (e) {
     console.warn('Failed to cache theme:', e);
   }
@@ -37,6 +40,15 @@ const getCachedTheme = (): Theme | null => {
     console.warn('Failed to get cached theme:', e);
   }
   return null;
+};
+
+// Check if theme has ever been loaded
+const hasThemeBeenLoaded = (): boolean => {
+  try {
+    return localStorage.getItem(THEME_READY_KEY) === 'true';
+  } catch (e) {
+    return false;
+  }
 };
 
 // Apply theme to document - can be called before React mounts
@@ -73,34 +85,33 @@ export const applyThemeToDocument = (theme: Theme) => {
   } else {
     root.classList.remove('dark');
   }
+  
+  // Mark theme as applied
+  root.setAttribute('data-theme-loaded', 'true');
 };
 
 // Initialize theme immediately (called before React mounts)
-export const initializeTheme = () => {
+export const initializeTheme = (): Theme | null => {
   const cached = getCachedTheme();
   if (cached) {
     applyThemeToDocument(cached);
     return cached;
   }
-  // Fallback to warm-furniture from defaults
-  const fallback = defaultThemes.find(t => t.slug === 'warm-furniture');
-  if (fallback) {
-    applyThemeToDocument(fallback);
-    return fallback;
-  }
+  // No cached theme - site will show loader until theme is fetched
   return null;
 };
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize with cached theme immediately
   const [themes, setThemes] = useState<Theme[]>([]);
   const [currentTheme, setCurrentTheme] = useState<Theme | null>(() => getCachedTheme());
   const [savedTheme, setSavedTheme] = useState<Theme | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isThemeReady, setIsThemeReady] = useState(() => hasThemeBeenLoaded() && getCachedTheme() !== null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const applyTheme = useCallback((theme: Theme) => {
     applyThemeToDocument(theme);
+    setIsThemeReady(true);
   }, []);
 
   const fetchThemes = useCallback(async () => {
@@ -131,23 +142,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           setCurrentTheme(active);
           setSavedTheme(active);
           applyTheme(active);
-          cacheTheme(active); // Cache for next page load
+          cacheTheme(active);
+        } else {
+          // No active theme - activate first one automatically
+          const firstTheme = mappedThemes[0];
+          await supabase
+            .from('themes')
+            .update({ is_active: true })
+            .eq('id', firstTheme.id);
+          
+          const updatedTheme = { ...firstTheme, isActive: true };
+          setCurrentTheme(updatedTheme);
+          setSavedTheme(updatedTheme);
+          applyTheme(updatedTheme);
+          cacheTheme(updatedTheme);
         }
       } else {
-        // Seed default themes if none exist
+        // No themes in database - seed them and activate first one
         await seedDefaultThemes();
       }
     } catch (error) {
       console.error('Error fetching themes:', error);
-      // Fallback to default themes
-      setThemes(defaultThemes);
-      const warmFurniture = defaultThemes.find(t => t.slug === 'warm-furniture');
-      if (warmFurniture) {
-        setCurrentTheme(warmFurniture);
-        setSavedTheme(warmFurniture);
-        applyTheme(warmFurniture);
-        cacheTheme(warmFurniture);
+      // If we have cached theme, use it
+      const cached = getCachedTheme();
+      if (cached) {
+        setCurrentTheme(cached);
+        setSavedTheme(cached);
+        applyTheme(cached);
       }
+      // Otherwise, leave isThemeReady as false - site shows loader
     } finally {
       setIsLoading(false);
     }
@@ -155,8 +178,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const seedDefaultThemes = async () => {
     try {
-      for (const theme of defaultThemes) {
-        const { error } = await supabase
+      let firstInsertedTheme: Theme | null = null;
+      
+      for (let i = 0; i < defaultThemes.length; i++) {
+        const theme = defaultThemes[i];
+        const isFirst = i === 0;
+        
+        const { data, error } = await supabase
           .from('themes')
           .insert({
             name: theme.name,
@@ -165,11 +193,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             typography: JSON.parse(JSON.stringify(theme.typography)),
             component_styles: JSON.parse(JSON.stringify(theme.componentStyles)),
             layout_settings: JSON.parse(JSON.stringify(theme.layoutSettings)),
-            is_active: theme.slug === 'warm-furniture',
+            is_active: isFirst, // Activate first theme
             is_dark: theme.isDark
-          });
+          })
+          .select()
+          .single();
         
-        if (error) console.error('Error inserting theme:', theme.name, error);
+        if (error) {
+          console.error('Error inserting theme:', theme.name, error);
+        } else if (isFirst && data) {
+          firstInsertedTheme = {
+            id: data.id,
+            name: data.name,
+            slug: data.slug,
+            colorPalette: data.color_palette as any,
+            typography: data.typography as any,
+            componentStyles: data.component_styles as any,
+            layoutSettings: data.layout_settings as any,
+            isActive: true,
+            isDark: data.is_dark
+          };
+        }
+      }
+
+      // Apply the first theme immediately after seeding
+      if (firstInsertedTheme) {
+        setCurrentTheme(firstInsertedTheme);
+        setSavedTheme(firstInsertedTheme);
+        applyTheme(firstInsertedTheme);
+        cacheTheme(firstInsertedTheme);
       }
 
       await fetchThemes();
@@ -237,6 +289,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         currentTheme,
         themes,
         isLoading,
+        isThemeReady,
         setActiveTheme,
         previewTheme,
         resetPreview,

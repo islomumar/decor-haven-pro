@@ -102,8 +102,12 @@ export function Header() {
               <span>{contactPhone}</span>
             </a>
 
-            {/* Cart */}
-            <button onClick={() => setCartOpen(true)} className="relative">
+            {/* Cart - Toggle behavior */}
+            <button 
+              onClick={() => setCartOpen(prev => !prev)} 
+              className="relative"
+              aria-label={cartOpen ? 'Close cart' : 'Open cart'}
+            >
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <span>
                   <ShoppingBag className="w-5 h-5" />

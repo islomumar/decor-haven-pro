@@ -1,15 +1,26 @@
-import { ExternalLink, Eye, Pencil, Info } from 'lucide-react';
+import { ExternalLink, Eye, Pencil, Info, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SiteContent() {
+  const handleOpenVisualEditor = () => {
+    // Open site with edit mode enabled via URL parameter
+    window.open('/?edit=true', '_blank');
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Sayt kontenti</h1>
-        <p className="text-muted-foreground">Saytdagi barcha matnlarni vizual tahrirlang</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Sayt kontenti</h1>
+          <p className="text-muted-foreground">Saytdagi barcha matnlarni vizual tahrirlang</p>
+        </div>
+        <Button onClick={handleOpenVisualEditor} size="lg" className="gap-2">
+          <Play className="h-5 w-5" />
+          Vizual tahrirlashni boshlash
+        </Button>
       </div>
 
       <Alert>
@@ -17,7 +28,7 @@ export default function SiteContent() {
         <AlertTitle>Yangi vizual tahrirlash tizimi</AlertTitle>
         <AlertDescription>
           Endi sayt kontentini to'g'ridan-to'g'ri sayt sahifalarida tahrirlashingiz mumkin. 
-          Saytga o'ting va "Tahrirlash" tugmasini bosing.
+          "Vizual tahrirlashni boshlash" tugmasini bosing yoki saytga o'ting.
         </AlertDescription>
       </Alert>
 
@@ -41,36 +52,33 @@ export default function SiteContent() {
               "Tahrirlash" tugmasi paydo bo'ladi. Uni bosib, istalgan matnni bevosita tahrirlang.
             </p>
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Qanday ishlaydi:</h4>
+              <h4 className="font-medium text-sm">Tahrirlash usullari:</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Saytga o'ting
+                  <strong>URL orqali:</strong> /?edit=true
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  "Tahrirlash" tugmasini bosing
+                  <strong>Tugma orqali:</strong> pastki o'ng burchakda
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Tahrir qilinadigan elementlar ajratiladi
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  ✏️ ikonasini bosib matnni o'zgartiring
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  UZ/RU tilini tanlang va alohida tahrirlang
+                  Tahrirlash rejimi saqlanib qoladi
                 </li>
               </ul>
             </div>
-            <Button asChild className="w-full">
-              <Link to="/" target="_blank">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Saytga o'tish
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleOpenVisualEditor} className="flex-1">
+                <Pencil className="mr-2 h-4 w-4" />
+                Tahrirlash rejimida ochish
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/" target="_blank">
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

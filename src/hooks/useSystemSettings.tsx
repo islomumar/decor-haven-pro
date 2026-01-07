@@ -5,6 +5,7 @@ export interface SystemSettings {
   id: string;
   site_name: string;
   logo_url: string | null;
+  favicon_url: string | null;
   contact_phone: string | null;
   whatsapp_number: string | null;
   working_hours_uz: string | null;
@@ -16,6 +17,11 @@ export interface SystemSettings {
   default_language: string;
   languages_enabled: string[];
   primary_domain: string | null;
+  short_description_uz: string | null;
+  short_description_ru: string | null;
+  social_facebook: string | null;
+  social_instagram: string | null;
+  social_telegram: string | null;
 }
 
 interface SystemSettingsContextType {
@@ -24,9 +30,13 @@ interface SystemSettingsContextType {
   refreshSettings: () => Promise<void>;
   getSiteName: () => string;
   getLogo: () => string | null;
+  getFavicon: () => string | null;
   getPrimaryDomain: () => string;
   getSEOTitle: (pageName?: string) => string;
   getSEODescription: () => string;
+  getShortDescription: (language: 'uz' | 'ru') => string;
+  getAddress: (language: 'uz' | 'ru') => string;
+  getWorkingHours: (language: 'uz' | 'ru') => string;
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined);
@@ -35,6 +45,7 @@ const defaultSettings: SystemSettings = {
   id: '',
   site_name: 'Mebel Store',
   logo_url: null,
+  favicon_url: null,
   contact_phone: '',
   whatsapp_number: '',
   working_hours_uz: '',
@@ -46,6 +57,11 @@ const defaultSettings: SystemSettings = {
   default_language: 'uz',
   languages_enabled: ['uz', 'ru'],
   primary_domain: null,
+  short_description_uz: '',
+  short_description_ru: '',
+  social_facebook: null,
+  social_instagram: null,
+  social_telegram: null,
 };
 
 export function SystemSettingsProvider({ children }: { children: React.ReactNode }) {
@@ -67,7 +83,7 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
         setSettings({
           ...defaultSettings,
           ...data,
-        });
+        } as SystemSettings);
       } else {
         setSettings(defaultSettings);
       }
@@ -83,6 +99,34 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
     fetchSettings();
   }, []);
 
+  // Update favicon when settings change
+  useEffect(() => {
+    if (settings?.favicon_url) {
+      updateFavicon(settings.favicon_url);
+    }
+  }, [settings?.favicon_url]);
+
+  const updateFavicon = (url: string) => {
+    // Add cache buster
+    const cacheBustedUrl = `${url}?v=${Date.now()}`;
+    
+    // Remove existing favicon links
+    const existingLinks = document.querySelectorAll("link[rel*='icon']");
+    existingLinks.forEach(link => link.remove());
+
+    // Create new favicon link
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = cacheBustedUrl;
+    document.head.appendChild(link);
+
+    // Also add shortcut icon for older browsers
+    const shortcutLink = document.createElement('link');
+    shortcutLink.rel = 'shortcut icon';
+    shortcutLink.href = cacheBustedUrl;
+    document.head.appendChild(shortcutLink);
+  };
+
   const refreshSettings = async () => {
     await fetchSettings();
   };
@@ -93,6 +137,10 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
 
   const getLogo = () => {
     return settings?.logo_url || null;
+  };
+
+  const getFavicon = () => {
+    return settings?.favicon_url || null;
   };
 
   const getPrimaryDomain = () => {
@@ -109,6 +157,27 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
 
   const getSEODescription = () => {
     return settings?.seo_description || '';
+  };
+
+  const getShortDescription = (language: 'uz' | 'ru') => {
+    if (language === 'ru') {
+      return settings?.short_description_ru || settings?.short_description_uz || '';
+    }
+    return settings?.short_description_uz || '';
+  };
+
+  const getAddress = (language: 'uz' | 'ru') => {
+    if (language === 'ru') {
+      return settings?.address_ru || settings?.address_uz || '';
+    }
+    return settings?.address_uz || '';
+  };
+
+  const getWorkingHours = (language: 'uz' | 'ru') => {
+    if (language === 'ru') {
+      return settings?.working_hours_ru || settings?.working_hours_uz || '';
+    }
+    return settings?.working_hours_uz || '';
   };
 
   // Update document title when settings load
@@ -129,9 +198,13 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
         refreshSettings,
         getSiteName,
         getLogo,
+        getFavicon,
         getPrimaryDomain,
         getSEOTitle,
         getSEODescription,
+        getShortDescription,
+        getAddress,
+        getWorkingHours,
       }}
     >
       {children}

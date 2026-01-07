@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Send } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
-import { EditableText } from '@/components/EditableText';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const { settings, getSiteName, getLogo, getShortDescription, getAddress, getWorkingHours } = useSystemSettings();
+
+  const siteName = getSiteName();
+  const logoUrl = getLogo();
+  const shortDescription = getShortDescription(language);
+  const address = getAddress(language);
+  const workingHours = getWorkingHours(language);
+  const contactPhone = settings?.contact_phone || '';
 
   return (
     <footer className="bg-primary text-primary-foreground">
@@ -13,42 +21,81 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-primary-foreground rounded-lg flex items-center justify-center">
-                <span className="text-primary font-serif font-bold text-xl">M</span>
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={siteName} 
+                  className="h-10 max-w-[160px] object-contain brightness-0 invert"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling;
+                    if (fallback) fallback.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <div className={`flex items-center gap-2 ${logoUrl ? 'hidden' : ''}`}>
+                <div className="w-10 h-10 bg-primary-foreground rounded-lg flex items-center justify-center">
+                  <span className="text-primary font-serif font-bold text-xl">
+                    {siteName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="font-serif text-xl font-bold">{siteName}</span>
               </div>
-              <span className="font-serif text-xl font-bold">Mebel Usta</span>
             </div>
             <p className="text-primary-foreground/80 text-sm leading-relaxed mb-6">
-              <EditableText 
-                contentKey="footer_description" 
-                fallback={t.footer.description}
-                as="span"
-                className="text-sm"
-              />
+              {shortDescription || t.footer.description}
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="https://t.me/mebelusta" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
-                <Send className="w-5 h-5" />
-              </a>
+              {settings?.social_facebook && (
+                <a 
+                  href={settings.social_facebook} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
+              )}
+              {settings?.social_instagram && (
+                <a 
+                  href={settings.social_instagram} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+                >
+                  <Instagram className="w-5 h-5" />
+                </a>
+              )}
+              {settings?.social_telegram && (
+                <a 
+                  href={settings.social_telegram} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors"
+                >
+                  <Send className="w-5 h-5" />
+                </a>
+              )}
+              {/* Show default icons if no social links configured */}
+              {!settings?.social_facebook && !settings?.social_instagram && !settings?.social_telegram && (
+                <>
+                  <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                  <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+                    <Instagram className="w-5 h-5" />
+                  </a>
+                  <a href="#" className="w-10 h-10 bg-primary-foreground/10 rounded-full flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+                    <Send className="w-5 h-5" />
+                  </a>
+                </>
+              )}
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-4">
-              <EditableText 
-                contentKey="footer_quicklinks_title" 
-                fallback={t.footer.quickLinks}
-                as="span"
-                className="font-semibold text-lg"
-              />
-            </h4>
+            <h4 className="font-serif font-semibold text-lg mb-4">{t.footer.quickLinks}</h4>
             <ul className="space-y-3">
               <li><Link to="/" className="text-primary-foreground/80 hover:text-primary-foreground text-sm">{t.nav.home}</Link></li>
               <li><Link to="/catalog" className="text-primary-foreground/80 hover:text-primary-foreground text-sm">{t.nav.catalog}</Link></li>
@@ -60,46 +107,26 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-4">
-              <EditableText 
-                contentKey="footer_contact_title" 
-                fallback={t.footer.contact}
-                as="span"
-                className="font-semibold text-lg"
-              />
-            </h4>
+            <h4 className="font-serif font-semibold text-lg mb-4">{t.footer.contact}</h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <span className="text-primary-foreground/80 text-sm">
-                  <EditableText 
-                    contentKey="footer_address" 
-                    fallback="Toshkent sh., Chilonzor tumani, Bunyodkor ko'chasi, 15-uy"
-                    as="span"
-                    className="text-sm"
-                  />
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 flex-shrink-0" />
-                <a href="tel:+998901234567" className="text-primary-foreground/80 hover:text-primary-foreground text-sm">
-                  <EditableText 
-                    contentKey="footer_phone" 
-                    fallback="+998 90 123 45 67"
-                    as="span"
-                    className="text-sm"
-                  />
-                </a>
-              </li>
+              {address && (
+                <li className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span className="text-primary-foreground/80 text-sm">{address}</span>
+                </li>
+              )}
+              {contactPhone && (
+                <li className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 flex-shrink-0" />
+                  <a href={`tel:${contactPhone.replace(/\s/g, '')}`} className="text-primary-foreground/80 hover:text-primary-foreground text-sm">
+                    {contactPhone}
+                  </a>
+                </li>
+              )}
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 flex-shrink-0" />
-                <a href="mailto:info@mebelusta.uz" className="text-primary-foreground/80 hover:text-primary-foreground text-sm">
-                  <EditableText 
-                    contentKey="footer_email" 
-                    fallback="info@mebelusta.uz"
-                    as="span"
-                    className="text-sm"
-                  />
+                <a href={`mailto:info@${window.location.hostname}`} className="text-primary-foreground/80 hover:text-primary-foreground text-sm">
+                  info@{window.location.hostname === 'localhost' ? 'example.com' : window.location.hostname}
                 </a>
               </li>
             </ul>
@@ -107,45 +134,23 @@ export function Footer() {
 
           {/* Working Hours */}
           <div>
-            <h4 className="font-serif font-semibold text-lg mb-4">
-              <EditableText 
-                contentKey="footer_hours_title" 
-                fallback={t.footer.workingHours}
-                as="span"
-                className="font-semibold text-lg"
-              />
-            </h4>
+            <h4 className="font-serif font-semibold text-lg mb-4">{t.footer.workingHours}</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li>
-                <EditableText 
-                  contentKey="footer_weekdays" 
-                  fallback={t.footer.weekdays}
-                  as="span"
-                  className="text-sm"
-                />
-              </li>
-              <li>
-                <EditableText 
-                  contentKey="footer_saturday" 
-                  fallback={t.footer.saturday}
-                  as="span"
-                  className="text-sm"
-                />
-              </li>
-              <li>
-                <EditableText 
-                  contentKey="footer_sunday" 
-                  fallback={t.footer.sunday}
-                  as="span"
-                  className="text-sm"
-                />
-              </li>
+              {workingHours ? (
+                <li>{workingHours}</li>
+              ) : (
+                <>
+                  <li>{t.footer.weekdays}</li>
+                  <li>{t.footer.saturday}</li>
+                  <li>{t.footer.sunday}</li>
+                </>
+              )}
             </ul>
           </div>
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm text-primary-foreground/60">
-          © 2024 Mebel Usta. {t.footer.rights}
+          © {new Date().getFullYear()} {siteName}. {t.footer.rights}
         </div>
       </div>
     </footer>

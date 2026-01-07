@@ -393,13 +393,19 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           default_language: string | null
+          favicon_url: string | null
           id: string
           languages_enabled: string[] | null
           logo_url: string | null
           primary_domain: string | null
           seo_description: string | null
           seo_title: string | null
+          short_description_ru: string | null
+          short_description_uz: string | null
           site_name: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_telegram: string | null
           updated_at: string
           whatsapp_number: string | null
           working_hours_ru: string | null
@@ -411,13 +417,19 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           default_language?: string | null
+          favicon_url?: string | null
           id?: string
           languages_enabled?: string[] | null
           logo_url?: string | null
           primary_domain?: string | null
           seo_description?: string | null
           seo_title?: string | null
+          short_description_ru?: string | null
+          short_description_uz?: string | null
           site_name?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_telegram?: string | null
           updated_at?: string
           whatsapp_number?: string | null
           working_hours_ru?: string | null
@@ -429,13 +441,19 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           default_language?: string | null
+          favicon_url?: string | null
           id?: string
           languages_enabled?: string[] | null
           logo_url?: string | null
           primary_domain?: string | null
           seo_description?: string | null
           seo_title?: string | null
+          short_description_ru?: string | null
+          short_description_uz?: string | null
           site_name?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_telegram?: string | null
           updated_at?: string
           whatsapp_number?: string | null
           working_hours_ru?: string | null

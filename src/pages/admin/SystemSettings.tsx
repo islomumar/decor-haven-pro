@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Save, Globe, Phone, Search, Settings2, Upload, X, Link as LinkIcon, Image } from 'lucide-react';
+import { Save, Globe, Phone, Search, Settings2, Upload, X, Link as LinkIcon, Image, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ interface SystemSettingsData {
   id: string;
   site_name: string;
   logo_url: string | null;
+  favicon_url: string | null;
   contact_phone: string | null;
   whatsapp_number: string | null;
   working_hours_uz: string | null;
@@ -27,11 +28,17 @@ interface SystemSettingsData {
   default_language: string;
   languages_enabled: string[];
   primary_domain: string | null;
+  short_description_uz: string | null;
+  short_description_ru: string | null;
+  social_facebook: string | null;
+  social_instagram: string | null;
+  social_telegram: string | null;
 }
 
 const defaultSettings: Omit<SystemSettingsData, 'id'> = {
   site_name: 'Mebel Store',
   logo_url: null,
+  favicon_url: null,
   contact_phone: '',
   whatsapp_number: '',
   working_hours_uz: '',
@@ -43,6 +50,11 @@ const defaultSettings: Omit<SystemSettingsData, 'id'> = {
   default_language: 'uz',
   languages_enabled: ['uz', 'ru'],
   primary_domain: null,
+  short_description_uz: '',
+  short_description_ru: '',
+  social_facebook: '',
+  social_instagram: '',
+  social_telegram: '',
 };
 
 export default function SystemSettings() {
@@ -50,9 +62,12 @@ export default function SystemSettings() {
   const [formData, setFormData] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { refreshSettings } = useSystemSettings();
 
@@ -71,23 +86,31 @@ export default function SystemSettings() {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setSettings(data as SystemSettingsData);
+        const settingsData = data as any;
+        setSettings(settingsData as SystemSettingsData);
         setFormData({
-          site_name: data.site_name || '',
-          logo_url: data.logo_url,
-          contact_phone: data.contact_phone || '',
-          whatsapp_number: data.whatsapp_number || '',
-          working_hours_uz: data.working_hours_uz || '',
-          working_hours_ru: data.working_hours_ru || '',
-          address_uz: data.address_uz || '',
-          address_ru: data.address_ru || '',
-          seo_title: data.seo_title || '',
-          seo_description: data.seo_description || '',
-          default_language: data.default_language || 'uz',
-          languages_enabled: data.languages_enabled || ['uz', 'ru'],
-          primary_domain: (data as any).primary_domain || null,
+          site_name: settingsData.site_name || '',
+          logo_url: settingsData.logo_url,
+          favicon_url: settingsData.favicon_url || null,
+          contact_phone: settingsData.contact_phone || '',
+          whatsapp_number: settingsData.whatsapp_number || '',
+          working_hours_uz: settingsData.working_hours_uz || '',
+          working_hours_ru: settingsData.working_hours_ru || '',
+          address_uz: settingsData.address_uz || '',
+          address_ru: settingsData.address_ru || '',
+          seo_title: settingsData.seo_title || '',
+          seo_description: settingsData.seo_description || '',
+          default_language: settingsData.default_language || 'uz',
+          languages_enabled: settingsData.languages_enabled || ['uz', 'ru'],
+          primary_domain: settingsData.primary_domain || null,
+          short_description_uz: settingsData.short_description_uz || '',
+          short_description_ru: settingsData.short_description_ru || '',
+          social_facebook: settingsData.social_facebook || '',
+          social_instagram: settingsData.social_instagram || '',
+          social_telegram: settingsData.social_telegram || '',
         });
-        setLogoPreview(data.logo_url);
+        setLogoPreview(settingsData.logo_url);
+        setFaviconPreview(settingsData.favicon_url);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -101,30 +124,19 @@ export default function SystemSettings() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
-      toast({
-        variant: 'destructive',
-        title: 'Xatolik',
-        description: 'Faqat SVG, PNG, JPG formatlar qo\'llab-quvvatlanadi',
-      });
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Faqat SVG, PNG, JPG formatlar qo\'llab-quvvatlanadi' });
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      toast({
-        variant: 'destructive',
-        title: 'Xatolik',
-        description: 'Fayl hajmi 2MB dan katta bo\'lmasligi kerak',
-      });
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Fayl hajmi 2MB dan katta bo\'lmasligi kerak' });
       return;
     }
 
-    setUploading(true);
+    setUploadingLogo(true);
     try {
-      // Delete old logo if exists
       if (formData.logo_url) {
         const oldPath = formData.logo_url.split('/').pop();
         if (oldPath && oldPath.startsWith('site-logo')) {
@@ -132,37 +144,73 @@ export default function SystemSettings() {
         }
       }
 
-      // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `site-logo-${Date.now()}.${fileExt}`;
       const filePath = `logos/${fileName}`;
 
-      // Upload new logo
       const { error: uploadError } = await supabase.storage
         .from('product-images')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(filePath);
       const newLogoUrl = urlData.publicUrl;
       setFormData({ ...formData, logo_url: newLogoUrl });
       setLogoPreview(newLogoUrl);
-
       toast({ title: 'Muvaffaqiyat', description: 'Logo yuklandi' });
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Xatolik',
-        description: error.message || 'Logoni yuklashda xatolik',
-      });
+      toast({ variant: 'destructive', title: 'Xatolik', description: error.message || 'Logoni yuklashda xatolik' });
     } finally {
-      setUploading(false);
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleFaviconUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/svg+xml', 'image/png', 'image/x-icon', 'image/vnd.microsoft.icon'];
+    if (!validTypes.includes(file.type)) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Faqat SVG, PNG, ICO formatlar qo\'llab-quvvatlanadi' });
+      return;
+    }
+
+    if (file.size > 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Xatolik', description: 'Fayl hajmi 1MB dan katta bo\'lmasligi kerak' });
+      return;
+    }
+
+    setUploadingFavicon(true);
+    try {
+      if (formData.favicon_url) {
+        const oldPath = formData.favicon_url.split('/').pop();
+        if (oldPath && oldPath.startsWith('site-favicon')) {
+          await supabase.storage.from('product-images').remove([`favicons/${oldPath}`]);
+        }
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `site-favicon-${Date.now()}.${fileExt}`;
+      const filePath = `favicons/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(filePath);
+      const newFaviconUrl = urlData.publicUrl;
+      setFormData({ ...formData, favicon_url: newFaviconUrl });
+      setFaviconPreview(newFaviconUrl);
+      toast({ title: 'Muvaffaqiyat', description: 'Favicon yuklandi' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ variant: 'destructive', title: 'Xatolik', description: error.message || 'Faviconni yuklashda xatolik' });
+    } finally {
+      setUploadingFavicon(false);
     }
   };
 
@@ -179,9 +227,23 @@ export default function SystemSettings() {
     }
     setFormData({ ...formData, logo_url: null });
     setLogoPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
+
+  const removeFavicon = async () => {
+    if (formData.favicon_url) {
+      try {
+        const oldPath = formData.favicon_url.split('/').pop();
+        if (oldPath && oldPath.startsWith('site-favicon')) {
+          await supabase.storage.from('product-images').remove([`favicons/${oldPath}`]);
+        }
+      } catch (error) {
+        console.error('Error removing favicon:', error);
+      }
     }
+    setFormData({ ...formData, favicon_url: null });
+    setFaviconPreview(null);
+    if (faviconInputRef.current) faviconInputRef.current.value = '';
   };
 
   const saveSettings = async () => {
@@ -192,24 +254,19 @@ export default function SystemSettings() {
           .from('system_settings')
           .update(formData)
           .eq('id', settings.id);
-
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('system_settings')
           .insert([formData]);
-
         if (error) throw error;
       }
 
-      // Update document title immediately
       if (formData.seo_title || formData.site_name) {
         document.title = formData.seo_title || formData.site_name;
       }
 
-      // Refresh global settings context
       await refreshSettings();
-
       toast({ title: 'Muvaffaqiyat', description: 'Sozlamalar saqlandi' });
       fetchSettings();
     } catch (error: any) {
@@ -225,7 +282,6 @@ export default function SystemSettings() {
       toast({ variant: 'destructive', title: 'Xatolik', description: 'Kamida bitta til faol bo\'lishi kerak' });
       return;
     }
-
     setFormData({
       ...formData,
       languages_enabled: enabled
@@ -265,6 +321,10 @@ export default function SystemSettings() {
             <Phone className="h-4 w-4" />
             Aloqa
           </TabsTrigger>
+          <TabsTrigger value="social" className="gap-2">
+            <Share2 className="h-4 w-4" />
+            Ijtimoiy
+          </TabsTrigger>
           <TabsTrigger value="language" className="gap-2">
             <Globe className="h-4 w-4" />
             Tillar
@@ -295,15 +355,36 @@ export default function SystemSettings() {
                   placeholder="Mebel Store"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Bu nom header, SEO va brauzer sarlavhasida ishlatiladi
+                  Bu nom header, footer, SEO va brauzer sarlavhasida ishlatiladi
                 </p>
               </div>
+
+              {/* Short Description */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Qisqa tavsif (UZ)</Label>
+                  <Textarea
+                    value={formData.short_description_uz || ''}
+                    onChange={(e) => setFormData({ ...formData, short_description_uz: e.target.value })}
+                    placeholder="Kompaniya haqida qisqacha..."
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Qisqa tavsif (RU)</Label>
+                  <Textarea
+                    value={formData.short_description_ru || ''}
+                    onChange={(e) => setFormData({ ...formData, short_description_ru: e.target.value })}
+                    placeholder="Краткое описание компании..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Bu tavsif footerda ko'rinadi</p>
 
               {/* Logo Upload */}
               <div className="space-y-3">
                 <Label>Sayt logosi</Label>
-                
-                {/* Logo Preview */}
                 {logoPreview ? (
                   <div className="relative inline-block">
                     <div className="border rounded-lg p-4 bg-muted/50 inline-flex items-center justify-center min-w-[200px] min-h-[80px]">
@@ -314,46 +395,62 @@ export default function SystemSettings() {
                         onError={() => setLogoPreview(null)}
                       />
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={removeLogo}
-                    >
+                    <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6" onClick={removeLogo}>
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
                   <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/20">
                     <Image className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Logo yuklanmagan
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-3">Logo yuklanmagan</p>
                   </div>
                 )}
-
-                {/* Upload Button */}
                 <div className="flex items-center gap-3">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".svg,.png,.jpg,.jpeg"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                    id="logo-upload"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                  >
+                  <input ref={logoInputRef} type="file" accept=".svg,.png,.jpg,.jpeg" onChange={handleLogoUpload} className="hidden" id="logo-upload" />
+                  <Button variant="outline" onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}>
                     <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? 'Yuklanmoqda...' : 'Logo yuklash'}
+                    {uploadingLogo ? 'Yuklanmoqda...' : 'Logo yuklash'}
                   </Button>
-                  <span className="text-xs text-muted-foreground">
-                    SVG, PNG, JPG (max 2MB)
-                  </span>
+                  <span className="text-xs text-muted-foreground">SVG, PNG, JPG (max 2MB)</span>
                 </div>
+              </div>
+
+              {/* Favicon Upload */}
+              <div className="space-y-3">
+                <Label>Favicon (brauzer ikonkasi)</Label>
+                {faviconPreview ? (
+                  <div className="relative inline-block">
+                    <div className="border rounded-lg p-4 bg-muted/50 inline-flex items-center justify-center min-w-[80px] min-h-[80px]">
+                      <img
+                        src={faviconPreview}
+                        alt="Favicon"
+                        className="max-h-12 max-w-12 object-contain"
+                        onError={() => setFaviconPreview(null)}
+                      />
+                    </div>
+                    <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6" onClick={removeFavicon}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center bg-muted/20 max-w-[200px]">
+                    <div className="w-8 h-8 mx-auto bg-muted rounded flex items-center justify-center mb-2">
+                      <span className="text-xs">🌐</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Favicon yuklanmagan</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <input ref={faviconInputRef} type="file" accept=".svg,.png,.ico" onChange={handleFaviconUpload} className="hidden" id="favicon-upload" />
+                  <Button variant="outline" onClick={() => faviconInputRef.current?.click()} disabled={uploadingFavicon}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingFavicon ? 'Yuklanmoqda...' : 'Favicon yuklash'}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">SVG, PNG, ICO (max 1MB)</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Favicon brauzer tabida ko'rinadi. 32x32 yoki 64x64 piksel o'lcham tavsiya etiladi.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -422,6 +519,44 @@ export default function SystemSettings() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ijtimoiy tarmoqlar</CardTitle>
+              <CardDescription>Footerda ko'rinadigan ijtimoiy tarmoq havolalari</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Facebook</Label>
+                <Input
+                  value={formData.social_facebook || ''}
+                  onChange={(e) => setFormData({ ...formData, social_facebook: e.target.value })}
+                  placeholder="https://facebook.com/yourpage"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Instagram</Label>
+                <Input
+                  value={formData.social_instagram || ''}
+                  onChange={(e) => setFormData({ ...formData, social_instagram: e.target.value })}
+                  placeholder="https://instagram.com/yourpage"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telegram</Label>
+                <Input
+                  value={formData.social_telegram || ''}
+                  onChange={(e) => setFormData({ ...formData, social_telegram: e.target.value })}
+                  placeholder="https://t.me/yourchannel"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Bo'sh qoldirilsa, footer da bu ijtimoiy tarmoq ko'rinmaydi
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

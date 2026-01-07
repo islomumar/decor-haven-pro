@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase } from '@/integrations/supabase/client';
 import { Theme, defaultThemes } from '@/lib/themes';
 
+const THEME_CACHE_KEY = 'furniture-active-theme';
+
 interface ThemeContextType {
   currentTheme: Theme | null;
   themes: Theme[];
@@ -15,46 +17,90 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// Cache theme to localStorage
+const cacheTheme = (theme: Theme) => {
+  try {
+    localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
+  } catch (e) {
+    console.warn('Failed to cache theme:', e);
+  }
+};
+
+// Get cached theme from localStorage
+const getCachedTheme = (): Theme | null => {
+  try {
+    const cached = localStorage.getItem(THEME_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    console.warn('Failed to get cached theme:', e);
+  }
+  return null;
+};
+
+// Apply theme to document - can be called before React mounts
+export const applyThemeToDocument = (theme: Theme) => {
+  const root = document.documentElement;
+  
+  // Apply color palette
+  Object.entries(theme.colorPalette).forEach(([key, value]) => {
+    const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+    root.style.setProperty(`--${cssVar}`, value);
+  });
+
+  // Apply typography
+  root.style.setProperty('--font-sans', theme.typography.fontSans);
+  root.style.setProperty('--font-serif', theme.typography.fontSerif);
+  root.style.setProperty('--font-heading', theme.typography.fontHeading);
+
+  // Apply component styles
+  root.style.setProperty('--radius', theme.componentStyles.borderRadius);
+  root.style.setProperty('--button-radius', theme.componentStyles.buttonRadius);
+  root.style.setProperty('--card-radius', theme.componentStyles.cardRadius);
+  root.style.setProperty('--shadow-sm', theme.componentStyles.shadowSm);
+  root.style.setProperty('--shadow-md', theme.componentStyles.shadowMd);
+  root.style.setProperty('--shadow-lg', theme.componentStyles.shadowLg);
+
+  // Apply layout settings
+  root.style.setProperty('--container-max-width', theme.layoutSettings.containerMaxWidth);
+  root.style.setProperty('--section-spacing', theme.layoutSettings.sectionSpacing);
+  root.style.setProperty('--card-padding', theme.layoutSettings.cardPadding);
+
+  // Toggle dark mode class
+  if (theme.isDark) {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+};
+
+// Initialize theme immediately (called before React mounts)
+export const initializeTheme = () => {
+  const cached = getCachedTheme();
+  if (cached) {
+    applyThemeToDocument(cached);
+    return cached;
+  }
+  // Fallback to warm-furniture from defaults
+  const fallback = defaultThemes.find(t => t.slug === 'warm-furniture');
+  if (fallback) {
+    applyThemeToDocument(fallback);
+    return fallback;
+  }
+  return null;
+};
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Initialize with cached theme immediately
   const [themes, setThemes] = useState<Theme[]>([]);
-  const [currentTheme, setCurrentTheme] = useState<Theme | null>(null);
+  const [currentTheme, setCurrentTheme] = useState<Theme | null>(() => getCachedTheme());
   const [savedTheme, setSavedTheme] = useState<Theme | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const applyTheme = useCallback((theme: Theme) => {
-    const root = document.documentElement;
-    
-    // Apply color palette
-    Object.entries(theme.colorPalette).forEach(([key, value]) => {
-      const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-      root.style.setProperty(`--${cssVar}`, value);
-    });
-
-    // Apply typography
-    root.style.setProperty('--font-sans', theme.typography.fontSans);
-    root.style.setProperty('--font-serif', theme.typography.fontSerif);
-    root.style.setProperty('--font-heading', theme.typography.fontHeading);
-
-    // Apply component styles
-    root.style.setProperty('--radius', theme.componentStyles.borderRadius);
-    root.style.setProperty('--button-radius', theme.componentStyles.buttonRadius);
-    root.style.setProperty('--card-radius', theme.componentStyles.cardRadius);
-    root.style.setProperty('--shadow-sm', theme.componentStyles.shadowSm);
-    root.style.setProperty('--shadow-md', theme.componentStyles.shadowMd);
-    root.style.setProperty('--shadow-lg', theme.componentStyles.shadowLg);
-
-    // Apply layout settings
-    root.style.setProperty('--container-max-width', theme.layoutSettings.containerMaxWidth);
-    root.style.setProperty('--section-spacing', theme.layoutSettings.sectionSpacing);
-    root.style.setProperty('--card-padding', theme.layoutSettings.cardPadding);
-
-    // Toggle dark mode class
-    if (theme.isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    applyThemeToDocument(theme);
   }, []);
 
   const fetchThemes = useCallback(async () => {
@@ -85,6 +131,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           setCurrentTheme(active);
           setSavedTheme(active);
           applyTheme(active);
+          cacheTheme(active); // Cache for next page load
         }
       } else {
         // Seed default themes if none exist
@@ -99,6 +146,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setCurrentTheme(warmFurniture);
         setSavedTheme(warmFurniture);
         applyTheme(warmFurniture);
+        cacheTheme(warmFurniture);
       }
     } finally {
       setIsLoading(false);
@@ -132,12 +180,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setActiveTheme = async (themeId: string) => {
     try {
+      const themeToActivate = themes.find(t => t.id === themeId);
+      
       const { error } = await supabase
         .from('themes')
         .update({ is_active: true })
         .eq('id', themeId);
 
       if (error) throw error;
+
+      // Immediately cache and apply the new theme
+      if (themeToActivate) {
+        const updatedTheme = { ...themeToActivate, isActive: true };
+        cacheTheme(updatedTheme);
+        applyTheme(updatedTheme);
+        setCurrentTheme(updatedTheme);
+        setSavedTheme(updatedTheme);
+      }
 
       await fetchThemes();
       setIsPreviewMode(false);

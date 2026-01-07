@@ -96,13 +96,16 @@ export default function Checkout() {
       // Generate order number (trigger will override, but types require it)
       const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g, '')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
       
+      // Clean phone number (remove spaces for database)
+      const cleanPhone = formData.phone.replace(/\s/g, '');
+      
       // Create the order
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([{
           order_number: orderNumber,
-          customer_name: formData.fullName,
-          customer_phone: formData.phone,
+          customer_name: formData.fullName.trim(),
+          customer_phone: cleanPhone,
           customer_message: [
             formData.renovationStatus && `Uy holati: ${renovationOptions.find(o => o.value === formData.renovationStatus)?.label}`,
             formData.preferredTime && `Qo'ng'iroq vaqti: ${formData.preferredTime}`,

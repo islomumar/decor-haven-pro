@@ -113,46 +113,47 @@ export default function AdminLayout() {
       </aside>
 
       {/* Desktop layout */}
-      <div className="hidden lg:flex">
-        {/* Desktop sidebar - not fixed, scrolls with page */}
-        <aside className="w-64 bg-white border-r min-h-screen">
-          <div className="sticky top-0 bg-white">
-            <div className="flex items-center h-16 px-6 border-b">
-              <Link to="/admin" className="font-serif text-xl font-bold text-primary">
-                Admin Panel
-              </Link>
-            </div>
+      <div className="hidden lg:flex min-h-screen">
+        {/* Desktop sidebar - fixed to viewport */}
+        <aside className="w-64 bg-white border-r fixed inset-y-0 left-0 flex flex-col">
+          <div className="flex items-center h-16 px-6 border-b">
+            <Link to="/admin" className="font-serif text-xl font-bold text-primary">
+              Admin Panel
+            </Link>
+          </div>
 
-            <nav className="p-4 space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.url}
-                  to={item.url}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    isActive(item.url)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-gray-600 hover:bg-gray-100"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.title}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="p-4 border-t">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-3"
-                onClick={() => navigate('/')}
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            {navItems.map((item) => (
+              <Link
+                key={item.url}
+                to={item.url}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                  isActive(item.url)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-gray-600 hover:bg-gray-100"
+                )}
               >
-                <LogOut className="h-4 w-4" />
-                Saytga qaytish
-              </Button>
-            </div>
+                <item.icon className="h-5 w-5" />
+                {item.title}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t mt-auto">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-3"
+              onClick={() => navigate('/')}
+            >
+              <LogOut className="h-4 w-4" />
+              Saytga qaytish
+            </Button>
           </div>
         </aside>
+
+        {/* Spacer for fixed sidebar */}
+        <div className="w-64 flex-shrink-0" />
 
         {/* Main content */}
         <div className="flex-1 min-w-0">

@@ -183,6 +183,42 @@ Deno.serve(async (req) => {
 
     console.log('Order completed successfully:', orderData.order_number);
 
+    // Send Telegram notification (async, don't wait for it)
+    try {
+      const telegramPayload = {
+        type: 'order',
+        order_data: {
+          order_number: orderData.order_number,
+          customer_name: body.customer_name.trim(),
+          customer_phone: body.customer_phone.replace(/\s/g, ''),
+          customer_message: body.customer_message || undefined,
+          total_price: totalPrice,
+          items: orderItems.map(item => ({
+            product_name: item.product_name_snapshot,
+            quantity: item.quantity,
+            price: item.price_snapshot,
+            selected_options: item.selected_options,
+          })),
+        },
+      };
+
+      // Call the send-telegram function internally
+      const telegramResponse = await fetch(`${supabaseUrl}/functions/v1/send-telegram`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify(telegramPayload),
+      });
+
+      const telegramResult = await telegramResponse.json();
+      console.log('Telegram notification result:', telegramResult);
+    } catch (telegramError) {
+      // Don't fail the order if Telegram fails
+      console.error('Telegram notification error (non-blocking):', telegramError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

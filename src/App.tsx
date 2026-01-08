@@ -13,7 +13,7 @@ import { SystemSettingsProvider } from "@/hooks/useSystemSettings";
 import { ThemeLoader } from "@/components/ThemeLoader";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+
 import { EditModeToggle } from "@/components/EditModeToggle";
 import { EditorPanel } from "@/components/editor/EditorPanel";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
@@ -135,7 +135,7 @@ const App = () => (
                             </Routes>
                           </main>
                           <Footer />
-                          <WhatsAppButton />
+                          
                           <EditModeToggle />
                           <EditorPanel />
                         </div>

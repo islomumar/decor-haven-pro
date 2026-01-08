@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ShoppingBag, Phone } from 'lucide-react';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
@@ -120,9 +121,6 @@ export function Header() {
               </Button>
             </button>
 
-            {/* Cart Drawer */}
-            <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
-
             {/* Mobile Menu Toggle */}
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -153,6 +151,12 @@ export function Header() {
           </nav>
         )}
       </div>
+
+      {/* Cart Drawer - rendered via portal to avoid layout shifts */}
+      {createPortal(
+        <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />,
+        document.body
+      )}
     </header>
   );
 }

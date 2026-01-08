@@ -70,7 +70,7 @@ export default function Contact() {
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <div className="bg-card p-8 rounded-2xl shadow-warm">
+          <div className="bg-card p-8 rounded-2xl shadow-warm h-fit">
             <h2 className="font-serif text-2xl font-bold mb-6">
               <EditableText 
                 contentKey="contact_form_title" 

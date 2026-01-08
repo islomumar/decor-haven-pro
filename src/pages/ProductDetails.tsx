@@ -221,7 +221,7 @@ export default function ProductDetails() {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col gap-3 mb-8">
+            <div className="flex flex-col gap-3 mb-4">
               <Button
                 size="lg"
                 className="w-full gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
@@ -236,9 +236,19 @@ export default function ProductDetails() {
                   <MessageCircle className="w-5 h-5" /> {t.products.orderWhatsApp}
                 </a>
               </Button>
+              
+              {/* View Cart - shown after adding to cart */}
+              {inCart && (
+                <Button asChild size="lg" variant="secondary" className="w-full gap-2 rounded-lg font-medium">
+                  <Link to="/cart">
+                    <ShoppingBag className="w-5 h-5" />
+                    {language === 'uz' ? "Savatchani ko'rish" : 'Посмотреть корзину'}
+                  </Link>
+                </Button>
+              )}
             </div>
 
-            <Button asChild variant="ghost" className="w-full gap-2">
+            <Button asChild variant="ghost" className="w-full gap-2 mb-4">
               <a href="tel:+998901234567">
                 <Phone className="w-4 h-4" /> {t.products.requestConsultation}
               </a>

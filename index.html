@@ -3,6 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Prevent browser from pinning an old cached favicon before app loads -->
+    <link rel="icon" href="data:," />
+    <script>
+      // Set favicon as early as possible from cached settings (prevents "old favicon" on refresh)
+      (function () {
+        try {
+          var raw = localStorage.getItem('site-assets-cache-v1');
+          if (!raw) return;
+          var parsed = JSON.parse(raw);
+          var url = parsed && parsed.favicon_url;
+          if (!url) return;
+          var clean = String(url).split('#')[0];
+          var pathPart = clean.split('?')[0];
+          var version = (pathPart.split('/').pop() || '0');
+          var sep = clean.indexOf('?') !== -1 ? '&' : '?';
+          var cacheBusted = clean + sep + 'v=' + encodeURIComponent(version);
+          var links = document.querySelectorAll("link[rel*='icon']");
+          links.forEach(function (l) { l.parentNode && l.parentNode.removeChild(l); });
+          var link = document.createElement('link');
+          link.rel = 'icon';
+          link.href = cacheBusted;
+          document.head.appendChild(link);
+          var shortcut = document.createElement('link');
+          shortcut.rel = 'shortcut icon';
+          shortcut.href = cacheBusted;
+          document.head.appendChild(shortcut);
+        } catch (e) {}
+      })();
+    </script>
     <title>Mebel Do'koni</title>
     <meta name="description" content="Premium mebel do'koni - eng sifatli mebellar" />
     <meta name="author" content="Mebel Do'koni" />

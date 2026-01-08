@@ -256,14 +256,6 @@ export default function ProductDetails() {
               </div>
             )}
 
-            {/* Admin debug info */}
-            {isAdmin && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-                <p><strong>Debug:</strong> ID: {product.id}</p>
-                <p>Category ID: {product.category_id || 'null'}</p>
-                <p>Slug: {product.slug || 'null'}</p>
-              </div>
-            )}
           </div>
         </div>
 

@@ -131,20 +131,14 @@ export default function Dashboard() {
 
   const fetchSystemStatus = async () => {
     try {
-      // Fetch telegram settings
+      // Fetch telegram enabled setting
       const { data: telegramData } = await supabase
         .from('settings')
         .select('value')
-        .eq('key', 'telegram')
+        .eq('key', 'telegram_enabled')
         .maybeSingle();
 
-      let telegramEnabled = false;
-      if (telegramData?.value) {
-        try {
-          const parsed = JSON.parse(telegramData.value);
-          telegramEnabled = parsed.enabled || false;
-        } catch {}
-      }
+      const telegramEnabled = telegramData?.value === 'true';
 
       // Fetch system settings
       const { data: systemData } = await supabase

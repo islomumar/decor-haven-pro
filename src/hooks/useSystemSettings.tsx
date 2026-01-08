@@ -64,8 +64,61 @@ const defaultSettings: SystemSettings = {
   social_telegram: null,
 };
 
+type CachedSiteAssets = {
+  logo_url: string | null;
+  favicon_url: string | null;
+};
+
+const SITE_ASSETS_CACHE_KEY = 'site-assets-cache-v1';
+
+function getAssetVersion(url: string | null | undefined) {
+  if (!url) return '0';
+  // Use filename as version (it changes on each upload: site-logo-<ts>.*)
+  const clean = url.split('#')[0];
+  const pathPart = clean.split('?')[0];
+  return pathPart.split('/').pop() || '0';
+}
+
+function withCacheBuster(url: string, version: string) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}v=${encodeURIComponent(version)}`;
+}
+
+function readCachedSiteAssets(): CachedSiteAssets | null {
+  try {
+    const raw = localStorage.getItem(SITE_ASSETS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedSiteAssets;
+    return {
+      logo_url: typeof parsed.logo_url === 'string' ? parsed.logo_url : null,
+      favicon_url: typeof parsed.favicon_url === 'string' ? parsed.favicon_url : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSiteAssets(value: CachedSiteAssets) {
+  try {
+    localStorage.setItem(SITE_ASSETS_CACHE_KEY, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
 export function SystemSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const cachedAssets = readCachedSiteAssets();
+
+  const [settings, setSettings] = useState<SystemSettings | null>(() => {
+    // show cached logo/favicon immediately to avoid "old logo" flash on refresh
+    if (!cachedAssets) return null;
+    return {
+      ...defaultSettings,
+      logo_url: cachedAssets.logo_url,
+      favicon_url: cachedAssets.favicon_url,
+    };
+  });
+
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
@@ -78,18 +131,19 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching settings:', error);
-        setSettings(defaultSettings);
+        setSettings((prev) => prev ?? defaultSettings);
       } else if (data) {
-        setSettings({
+        const merged = {
           ...defaultSettings,
           ...data,
-        } as SystemSettings);
+        } as SystemSettings;
+        setSettings(merged);
       } else {
-        setSettings(defaultSettings);
+        setSettings((prev) => prev ?? defaultSettings);
       }
     } catch (error) {
       console.error('Error:', error);
-      setSettings(defaultSettings);
+      setSettings((prev) => prev ?? defaultSettings);
     } finally {
       setLoading(false);
     }
@@ -99,6 +153,15 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
     fetchSettings();
   }, []);
 
+  // Persist logo/favicon to localStorage so index.html can set favicon early
+  useEffect(() => {
+    if (!settings) return;
+    writeCachedSiteAssets({
+      logo_url: settings.logo_url || null,
+      favicon_url: settings.favicon_url || null,
+    });
+  }, [settings?.logo_url, settings?.favicon_url]);
+
   // Update favicon when settings change
   useEffect(() => {
     if (settings?.favicon_url) {
@@ -107,12 +170,12 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
   }, [settings?.favicon_url]);
 
   const updateFavicon = (url: string) => {
-    // Add cache buster
-    const cacheBustedUrl = `${url}?v=${Date.now()}`;
-    
+    const version = getAssetVersion(url);
+    const cacheBustedUrl = withCacheBuster(url, version);
+
     // Remove existing favicon links
     const existingLinks = document.querySelectorAll("link[rel*='icon']");
-    existingLinks.forEach(link => link.remove());
+    existingLinks.forEach((link) => link.remove());
 
     // Create new favicon link
     const link = document.createElement('link');
@@ -137,12 +200,14 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
 
   const getLogo = () => {
     if (!settings?.logo_url) return null;
-    // Add cache buster to prevent stale logo
-    return `${settings.logo_url}?v=${settings.id || Date.now()}`;
+    const version = getAssetVersion(settings.logo_url);
+    return withCacheBuster(settings.logo_url, version);
   };
 
   const getFavicon = () => {
-    return settings?.favicon_url || null;
+    if (!settings?.favicon_url) return null;
+    const version = getAssetVersion(settings.favicon_url);
+    return withCacheBuster(settings.favicon_url, version);
   };
 
   const getPrimaryDomain = () => {

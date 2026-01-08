@@ -85,18 +85,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         aria-hidden="true"
       />
 
-      {/* Drawer */}
+      {/* Drawer - Fixed position, flex column layout */}
       <div
         className={cn(
           "fixed z-[101] bg-card shadow-2xl flex flex-col",
-          // Desktop styles - full height right drawer
-          "md:top-0 md:right-0 md:h-screen md:w-[420px] md:max-w-[90vw] md:animate-slide-in-right",
-          // Mobile styles - bottom sheet
-          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:h-[85vh] max-md:rounded-t-3xl max-md:animate-fade-in"
+          // Mobile: bottom sheet style
+          "max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:h-[85dvh] max-md:rounded-t-3xl max-md:animate-slide-up",
+          // Desktop: right side drawer
+          "md:top-0 md:right-0 md:h-[100dvh] md:w-[420px] md:max-w-[90vw] md:animate-slide-in-right"
         )}
       >
-        {/* Header - Fixed at top, always visible */}
-        <div className="sticky top-0 z-10 flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+        {/* HEADER - Fixed, never scrolls */}
+        <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <ShoppingBag className="w-5 h-5 text-primary" />
@@ -110,7 +110,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </p>
             </div>
           </div>
-          {/* Close button - always visible */}
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
@@ -120,12 +119,12 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           </button>
         </div>
 
-        {/* Product List - Scrollable area only */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        {/* PRODUCT LIST - Only this section scrolls */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain cart-scroll">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
-              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
-                <ShoppingBag className="w-10 h-10 text-muted-foreground/40" />
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-5">
+                <ShoppingBag className="w-8 h-8 text-muted-foreground/40" />
               </div>
               <h3 className="font-serif font-bold text-lg mb-2">
                 {language === 'uz' ? 'Savatcha bo\'sh' : 'Корзина пуста'}
@@ -151,13 +150,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 return (
                   <div
                     key={item.product.id}
-                    className="flex gap-4 p-4 bg-muted/40 rounded-2xl hover:bg-muted/60 transition-colors"
+                    className="flex gap-3 p-3 bg-muted/40 rounded-xl hover:bg-muted/60 transition-colors"
                   >
                     {/* Image */}
                     <Link 
                       to={`/product/${(item.product as any).slug || item.product.id}`}
                       onClick={onClose}
-                      className="w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-background"
+                      className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-background"
                     >
                       <img
                         src={image}
@@ -167,55 +166,53 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </Link>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <Link 
-                          to={`/product/${(item.product as any).slug || item.product.id}`}
-                          onClick={onClose}
-                          className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors"
-                        >
-                          {name}
-                        </Link>
-                        
-                        {(item.selectedSize || item.selectedColor) && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {item.selectedSize && <span>{item.selectedSize}</span>}
-                            {item.selectedSize && item.selectedColor && ' • '}
-                            {item.selectedColor && <span>{item.selectedColor}</span>}
-                          </p>
-                        )}
-                      </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <Link 
+                        to={`/product/${(item.product as any).slug || item.product.id}`}
+                        onClick={onClose}
+                        className="font-medium text-sm line-clamp-2 hover:text-primary transition-colors leading-snug"
+                      >
+                        {name}
+                      </Link>
+                      
+                      {(item.selectedSize || item.selectedColor) && (
+                        <p className="text-xs text-muted-foreground">
+                          {item.selectedSize && <span>{item.selectedSize}</span>}
+                          {item.selectedSize && item.selectedColor && ' • '}
+                          {item.selectedColor && <span>{item.selectedColor}</span>}
+                        </p>
+                      )}
 
-                      <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center justify-between mt-auto">
                         {/* Price */}
-                        <span className="font-serif font-bold">
+                        <span className="font-serif font-bold text-sm">
                           {formatPrice(price * item.quantity)} 
-                          <span className="text-xs text-muted-foreground ml-1">{t.products.currency}</span>
+                          <span className="text-xs text-muted-foreground ml-0.5">{t.products.currency}</span>
                         </span>
 
                         {/* Quantity controls */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
                           >
-                            <Minus className="w-3.5 h-3.5" />
+                            <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-8 text-center text-sm font-semibold">
+                          <span className="w-7 text-center text-sm font-semibold">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-background border border-border hover:border-primary hover:text-primary transition-colors"
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => removeItem(item.product.id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-2"
+                            className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors ml-1"
                             aria-label="Remove"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -227,26 +224,26 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Footer - Sticky at bottom, always visible */}
+        {/* FOOTER - Fixed at bottom, always visible */}
         {items.length > 0 && (
-          <div className="sticky bottom-0 z-10 flex-shrink-0 border-t border-border bg-card px-6 py-4 space-y-4">
+          <div className="flex-shrink-0 border-t border-border bg-card px-5 py-4 space-y-3">
             {/* Total */}
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground font-medium">
                 {language === 'uz' ? 'Jami' : 'Итого'}
               </span>
-              <span className="font-serif text-2xl font-bold">
+              <span className="font-serif text-xl font-bold">
                 {formatPrice(totalPrice)} 
                 <span className="text-sm font-normal text-muted-foreground ml-1">{t.products.currency}</span>
               </span>
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <Button
                 asChild
                 size="lg"
-                className="w-full rounded-full h-12 text-base font-semibold"
+                className="w-full rounded-full h-11 text-base font-semibold"
                 onClick={onClose}
               >
                 <Link to="/checkout">
@@ -258,7 +255,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 asChild
                 variant="outline"
                 size="lg"
-                className="w-full rounded-full h-12"
+                className="w-full rounded-full h-11"
                 onClick={onClose}
               >
                 <Link to="/cart">

@@ -231,21 +231,6 @@ export default function ProductDetails() {
                 {inCart ? <Check className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
                 {inCart ? (language === 'uz' ? 'Savatda' : 'В корзине') : t.products.addToCart}
               </Button>
-              <Button asChild size="lg" variant="outline" className="w-full gap-2 rounded-lg border-2 border-green-600 text-green-600 hover:bg-green-50 font-medium">
-                <a href={`https://wa.me/998901234567?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-5 h-5" /> {t.products.orderWhatsApp}
-                </a>
-              </Button>
-              
-              {/* View Cart - shown after adding to cart */}
-              {inCart && (
-                <Button asChild size="lg" variant="secondary" className="w-full gap-2 rounded-lg font-medium">
-                  <Link to="/cart">
-                    <ShoppingBag className="w-5 h-5" />
-                    {language === 'uz' ? "Savatchani ko'rish" : 'Посмотреть корзину'}
-                  </Link>
-                </Button>
-              )}
             </div>
 
             <Button asChild variant="ghost" className="w-full gap-2 mb-4">

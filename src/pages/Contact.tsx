@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, Send, MessageCircle, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Send, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EditableText } from '@/components/EditableText';
-import { EditableImage } from '@/components/EditableImage';
+import { EditableLink } from '@/components/EditableLink';
 import { useSiteContent } from '@/hooks/useSiteContent';
 
 export default function Contact() {
@@ -182,11 +182,15 @@ export default function Contact() {
 
             {/* Quick Actions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild size="lg" variant="outline" className="flex-1 gap-2 rounded-full">
-                <a href="https://t.me/mebelusta" target="_blank" rel="noopener noreferrer">
+              <EditableLink
+                contentKey="contact_telegram_link"
+                fallback="https://t.me/mebelusta"
+                className="flex-1"
+              >
+                <Button size="lg" variant="outline" className="w-full gap-2 rounded-full">
                   <Send className="w-5 h-5" /> Telegram
-                </a>
-              </Button>
+                </Button>
+              </EditableLink>
             </div>
 
             {/* Yandex Map Embed */}

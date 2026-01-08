@@ -182,11 +182,6 @@ export default function Contact() {
 
             {/* Quick Actions */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button asChild size="lg" className="flex-1 gap-2 rounded-full bg-green-500 hover:bg-green-600">
-                <a href="https://wa.me/998901234567" target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-5 h-5" /> WhatsApp
-                </a>
-              </Button>
               <Button asChild size="lg" variant="outline" className="flex-1 gap-2 rounded-full">
                 <a href="https://t.me/mebelusta" target="_blank" rel="noopener noreferrer">
                   <Send className="w-5 h-5" /> Telegram

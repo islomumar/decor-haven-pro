@@ -70,28 +70,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Promo Section */}
-      <section className="py-12 bg-accent/10">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-serif text-2xl md:text-3xl font-bold mb-2">
-            <EditableText 
-              contentKey="promo_title" 
-              fallback="Maxsus taklif!"
-              as="span"
-              className="font-serif text-2xl md:text-3xl font-bold"
-            />
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            <EditableText 
-              contentKey="promo_subtitle" 
-              fallback="Barcha mebellarga 20% chegirma"
-              as="span"
-              className="text-lg"
-            />
-          </p>
-        </div>
-      </section>
-
       {/* Featured Products */}
       <section className="py-16">
         <div className="container mx-auto px-4">

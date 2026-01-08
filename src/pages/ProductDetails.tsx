@@ -221,17 +221,17 @@ export default function ProductDetails() {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <div className="flex flex-col gap-3 mb-8">
               <Button
                 size="lg"
-                className="flex-1 gap-2 rounded-full"
+                className="w-full gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                 onClick={() => addItem(product as any, 1, selectedSize, selectedColor)}
                 disabled={inCart || !product.in_stock}
               >
                 {inCart ? <Check className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
                 {inCart ? (language === 'uz' ? 'Savatda' : 'В корзине') : t.products.addToCart}
               </Button>
-              <Button asChild size="lg" variant="outline" className="flex-1 gap-2 rounded-full bg-green-50 border-green-500 text-green-700 hover:bg-green-100">
+              <Button asChild size="lg" variant="outline" className="w-full gap-2 rounded-lg border-2 border-green-600 text-green-600 hover:bg-green-50 font-medium">
                 <a href={`https://wa.me/998901234567?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="w-5 h-5" /> {t.products.orderWhatsApp}
                 </a>

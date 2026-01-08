@@ -136,7 +136,9 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
   };
 
   const getLogo = () => {
-    return settings?.logo_url || null;
+    if (!settings?.logo_url) return null;
+    // Add cache buster to prevent stale logo
+    return `${settings.logo_url}?v=${settings.id || Date.now()}`;
   };
 
   const getFavicon = () => {

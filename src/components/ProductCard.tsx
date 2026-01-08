@@ -44,6 +44,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <LazyImage
           src={images[0] || '/placeholder.svg'}
           alt={name}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           wrapperClassName="w-full h-full"
         />

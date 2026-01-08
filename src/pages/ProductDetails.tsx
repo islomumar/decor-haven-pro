@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductCard } from '@/components/ProductCard';
 import { ImageLightbox } from '@/components/ImageLightbox';
+import { LazyImage } from '@/components/LazyImage';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
 import { useProductById, useProducts, useCategories, Product } from '@/hooks/useProducts';
@@ -109,10 +110,13 @@ export default function ProductDetails() {
               onClick={() => images.length > 0 && setLightboxOpen(true)}
             >
               {images.length > 0 ? (
-                <img
+                <LazyImage
                   src={images[selectedImage] || images[0]}
                   alt={name}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  wrapperClassName="w-full h-full"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -130,7 +134,13 @@ export default function ProductDetails() {
                       selectedImage === i ? 'border-primary' : 'border-transparent'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <LazyImage 
+                      src={img} 
+                      alt="" 
+                      sizes="80px"
+                      className="w-full h-full object-cover" 
+                      wrapperClassName="w-full h-full"
+                    />
                   </button>
                 ))}
               </div>

@@ -132,6 +132,7 @@ export default function Index() {
                   <LazyImage 
                     src={category.image || '/placeholder.svg'} 
                     alt={language === 'uz' ? category.name_uz : category.name_ru} 
+                    sizes="(max-width: 640px) 50vw, 25vw"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     wrapperClassName="w-full h-full"
                   />

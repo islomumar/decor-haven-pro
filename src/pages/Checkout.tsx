@@ -305,13 +305,21 @@ export default function Checkout() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium line-clamp-1">{name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.quantity} x {formatPrice(price)} {t.products.currency}
-                        </p>
+                        {price > 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            {item.quantity} x {formatPrice(price)} {t.products.currency}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {item.quantity} x {language === 'uz' ? 'Kelishiladi' : 'Договорная'}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-sm font-semibold">
-                        {formatPrice(price * item.quantity)}
-                      </p>
+                      {price > 0 && (
+                        <p className="text-sm font-semibold">
+                          {formatPrice(price * item.quantity)}
+                        </p>
+                      )}
                     </div>
                   );
                 })}

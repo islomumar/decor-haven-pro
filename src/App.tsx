@@ -40,6 +40,7 @@ import Admins from "./pages/admin/Admins";
 import Settings from "./pages/admin/Settings";
 import SystemSettings from "./pages/admin/SystemSettings";
 import Themes from "./pages/admin/Themes";
+import CheckoutFormSettings from "./pages/admin/CheckoutFormSettings";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +108,11 @@ const App = () => (
                           <Route path="settings" element={
                             <ProtectedRoute module="telegram">
                               <Settings />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="checkout-form" element={
+                            <ProtectedRoute module="siteContent">
+                              <CheckoutFormSettings />
                             </ProtectedRoute>
                           } />
                           <Route path="system" element={

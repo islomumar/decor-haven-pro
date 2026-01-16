@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, User, Phone, MessageSquare, Clock, Home } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, User, Phone, MessageSquare, Clock, Home, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,22 +8,36 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/hooks/useCart';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useCheckoutFields, CheckoutField } from '@/hooks/useCheckoutFields';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
+// Icon mapping for dynamic fields
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Home,
+  User,
+  Phone,
+  Clock,
+  HelpCircle,
+};
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
   const { language, t } = useLanguage();
+  const { fields: checkoutFields, loading: fieldsLoading } = useCheckoutFields();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Base form data
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
-    renovationStatus: '',
     preferredTime: '',
     comment: '',
   });
+
+  // Dynamic field values
+  const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -33,11 +47,12 @@ export default function Checkout() {
     return (language === 'uz' ? product.name_uz : product.name_ru) || product.name_uz || product.name_ru || product.name || '';
   };
 
-  const renovationOptions = [
-    { value: 'finished', label: language === 'uz' ? 'Uy to\'liq tayyor' : 'Дом полностью готов' },
-    { value: 'in_progress', label: language === 'uz' ? 'Remont jarayonida' : 'Ремонт в процессе' },
-    { value: 'planning', label: language === 'uz' ? 'Remontni boshlashni rejalashtirmoqdaman' : 'Планирую начать ремонт' },
-  ];
+  // Get label for a selected option
+  const getOptionLabel = (field: CheckoutField, value: string): string => {
+    const option = field.options.find(o => o.value === value);
+    if (!option) return value;
+    return language === 'uz' ? option.label_uz : option.label_ru;
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -52,16 +67,18 @@ export default function Checkout() {
       newErrors.phone = language === 'uz' ? 'Noto\'g\'ri telefon formati' : 'Неверный формат телефона';
     }
 
-    if (!formData.renovationStatus) {
-      newErrors.renovationStatus = language === 'uz' ? 'Tanlash shart' : 'Выберите вариант';
-    }
+    // Validate required dynamic fields
+    checkoutFields.forEach(field => {
+      if (field.is_required && !dynamicValues[field.id]) {
+        newErrors[field.id] = language === 'uz' ? 'Tanlash shart' : 'Выберите вариант';
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handlePhoneChange = (value: string) => {
-    // Auto-format phone number
     let cleaned = value.replace(/\D/g, '');
     if (!cleaned.startsWith('998')) {
       cleaned = '998' + cleaned;
@@ -93,14 +110,21 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Build order message
+      // Build order message from dynamic fields
+      const dynamicMessages = checkoutFields
+        .filter(field => dynamicValues[field.id])
+        .map(field => {
+          const fieldLabel = language === 'uz' ? field.label_uz : field.label_ru;
+          const optionLabel = getOptionLabel(field, dynamicValues[field.id]);
+          return `${fieldLabel}: ${optionLabel}`;
+        });
+
       const customerMessage = [
-        formData.renovationStatus && `Uy holati: ${renovationOptions.find(o => o.value === formData.renovationStatus)?.label}`,
+        ...dynamicMessages,
         formData.preferredTime && `Qo'ng'iroq vaqti: ${formData.preferredTime}`,
         formData.comment && `Izoh: ${formData.comment}`,
       ].filter(Boolean).join('\n') || undefined;
 
-      // Prepare order items (only IDs and quantities - prices validated server-side)
       const orderItems = items.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -110,7 +134,6 @@ export default function Checkout() {
         },
       }));
 
-      // Call edge function for server-side price validation
       const { data: orderResult, error: orderError } = await supabase.functions.invoke('create-order', {
         body: {
           customer_name: formData.fullName.trim(),
@@ -126,7 +149,6 @@ export default function Checkout() {
         throw new Error(orderResult.error || 'Buyurtma yaratishda xatolik');
       }
 
-      // Clear cart and redirect
       clearCart();
       navigate('/thank-you', { state: { orderNumber: orderResult.order_number } });
 
@@ -213,30 +235,45 @@ export default function Checkout() {
                 )}
               </div>
 
-              {/* Renovation Status */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <Home className="w-4 h-4" />
-                  {language === 'uz' ? 'Uyingiz holati' : 'Состояние дома'} *
-                </Label>
-                <RadioGroup
-                  value={formData.renovationStatus}
-                  onValueChange={(value) => setFormData({ ...formData, renovationStatus: value })}
-                  className="space-y-2"
-                >
-                  {renovationOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-3">
-                      <RadioGroupItem value={option.value} id={option.value} />
-                      <Label htmlFor={option.value} className="font-normal cursor-pointer">
-                        {option.label}
+              {/* Dynamic Radio Fields */}
+              {fieldsLoading ? (
+                <div className="py-4 flex justify-center">
+                  <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : (
+                checkoutFields.map((field) => {
+                  const IconComponent = field.icon ? iconMap[field.icon] : Home;
+                  const fieldLabel = language === 'uz' ? field.label_uz : field.label_ru;
+
+                  return (
+                    <div key={field.id} className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        {IconComponent && <IconComponent className="w-4 h-4" />}
+                        {fieldLabel} {field.is_required && '*'}
                       </Label>
+                      <RadioGroup
+                        value={dynamicValues[field.id] || ''}
+                        onValueChange={(value) =>
+                          setDynamicValues({ ...dynamicValues, [field.id]: value })
+                        }
+                        className="space-y-2"
+                      >
+                        {field.options.map((option) => (
+                          <div key={option.id} className="flex items-center space-x-3">
+                            <RadioGroupItem value={option.value} id={option.id} />
+                            <Label htmlFor={option.id} className="font-normal cursor-pointer">
+                              {language === 'uz' ? option.label_uz : option.label_ru}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                      {errors[field.id] && (
+                        <p className="text-sm text-destructive">{errors[field.id]}</p>
+                      )}
                     </div>
-                  ))}
-                </RadioGroup>
-                {errors.renovationStatus && (
-                  <p className="text-sm text-destructive">{errors.renovationStatus}</p>
-                )}
-              </div>
+                  );
+                })
+              )}
 
               {/* Preferred Contact Time */}
               <div className="space-y-2">

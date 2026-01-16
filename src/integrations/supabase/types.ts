@@ -74,6 +74,89 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_field_options: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          is_active: boolean
+          label_ru: string
+          label_uz: string
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          is_active?: boolean
+          label_ru: string
+          label_uz: string
+          sort_order?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          is_active?: boolean
+          label_ru?: string
+          label_uz?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_field_options_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "checkout_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkout_fields: {
+        Row: {
+          created_at: string
+          field_type: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          label_ru: string
+          label_uz: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label_ru: string
+          label_uz: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          label_ru?: string
+          label_uz?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string

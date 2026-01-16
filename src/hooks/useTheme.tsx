@@ -144,22 +144,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           applyTheme(active);
           cacheTheme(active);
         } else {
-          // No active theme - activate first one automatically
+          // No active theme - use first one from list
           const firstTheme = mappedThemes[0];
-          await supabase
-            .from('themes')
-            .update({ is_active: true })
-            .eq('id', firstTheme.id);
-          
-          const updatedTheme = { ...firstTheme, isActive: true };
-          setCurrentTheme(updatedTheme);
-          setSavedTheme(updatedTheme);
-          applyTheme(updatedTheme);
-          cacheTheme(updatedTheme);
+          setCurrentTheme(firstTheme);
+          setSavedTheme(firstTheme);
+          applyTheme(firstTheme);
+          cacheTheme(firstTheme);
         }
       } else {
-        // No themes in database - seed them and activate first one
-        await seedDefaultThemes();
+        // No themes in database - use default from lib/themes
+        const defaultTheme = defaultThemes[0];
+        if (defaultTheme) {
+          setCurrentTheme(defaultTheme);
+          setSavedTheme(defaultTheme);
+          applyTheme(defaultTheme);
+          cacheTheme(defaultTheme);
+          setThemes(defaultThemes);
+        }
       }
     } catch (error) {
       console.error('Error fetching themes:', error);
@@ -169,66 +170,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setCurrentTheme(cached);
         setSavedTheme(cached);
         applyTheme(cached);
+      } else {
+        // Use default theme as fallback
+        const defaultTheme = defaultThemes[0];
+        if (defaultTheme) {
+          setCurrentTheme(defaultTheme);
+          setSavedTheme(defaultTheme);
+          applyTheme(defaultTheme);
+          cacheTheme(defaultTheme);
+          setThemes(defaultThemes);
+        }
       }
-      // Otherwise, leave isThemeReady as false - site shows loader
     } finally {
       setIsLoading(false);
     }
   }, [applyTheme]);
-
-  const seedDefaultThemes = async () => {
-    try {
-      let firstInsertedTheme: Theme | null = null;
-      
-      for (let i = 0; i < defaultThemes.length; i++) {
-        const theme = defaultThemes[i];
-        const isFirst = i === 0;
-        
-        const { data, error } = await supabase
-          .from('themes')
-          .insert({
-            name: theme.name,
-            slug: theme.slug,
-            color_palette: JSON.parse(JSON.stringify(theme.colorPalette)),
-            typography: JSON.parse(JSON.stringify(theme.typography)),
-            component_styles: JSON.parse(JSON.stringify(theme.componentStyles)),
-            layout_settings: JSON.parse(JSON.stringify(theme.layoutSettings)),
-            is_active: isFirst, // Activate first theme
-            is_dark: theme.isDark
-          })
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Error inserting theme:', theme.name, error);
-        } else if (isFirst && data) {
-          firstInsertedTheme = {
-            id: data.id,
-            name: data.name,
-            slug: data.slug,
-            colorPalette: data.color_palette as any,
-            typography: data.typography as any,
-            componentStyles: data.component_styles as any,
-            layoutSettings: data.layout_settings as any,
-            isActive: true,
-            isDark: data.is_dark
-          };
-        }
-      }
-
-      // Apply the first theme immediately after seeding
-      if (firstInsertedTheme) {
-        setCurrentTheme(firstInsertedTheme);
-        setSavedTheme(firstInsertedTheme);
-        applyTheme(firstInsertedTheme);
-        cacheTheme(firstInsertedTheme);
-      }
-
-      await fetchThemes();
-    } catch (error) {
-      console.error('Error seeding themes:', error);
-    }
-  };
 
   const setActiveTheme = async (themeId: string) => {
     try {

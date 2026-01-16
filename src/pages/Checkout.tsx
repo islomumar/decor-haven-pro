@@ -19,6 +19,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Phone,
   Clock,
   HelpCircle,
+  MessageSquare,
 };
 
 export default function Checkout() {
@@ -28,17 +29,8 @@ export default function Checkout() {
   const { fields: checkoutFields, loading: fieldsLoading } = useCheckoutFields();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Base form data
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    preferredTime: '',
-    comment: '',
-  });
-
-  // Dynamic field values
-  const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
-
+  // Dynamic field values - all fields are stored here
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const formatPrice = (price: number) => price.toLocaleString('uz-UZ');
@@ -47,38 +39,18 @@ export default function Checkout() {
     return (language === 'uz' ? product.name_uz : product.name_ru) || product.name_uz || product.name_ru || product.name || '';
   };
 
-  // Get label for a selected option
+  const getFieldLabel = (field: CheckoutField): string => {
+    return language === 'uz' ? field.label_uz : field.label_ru;
+  };
+
   const getOptionLabel = (field: CheckoutField, value: string): string => {
     const option = field.options.find(o => o.value === value);
     if (!option) return value;
     return language === 'uz' ? option.label_uz : option.label_ru;
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = language === 'uz' ? 'Ism kiritish shart' : 'Введите имя';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = language === 'uz' ? 'Telefon raqam kiritish shart' : 'Введите номер телефона';
-    } else if (!/^\+998\s?\d{2}\s?\d{3}\s?\d{2}\s?\d{2}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = language === 'uz' ? 'Noto\'g\'ri telefon formati' : 'Неверный формат телефона';
-    }
-
-    // Validate required dynamic fields
-    checkoutFields.forEach(field => {
-      if (field.is_required && !dynamicValues[field.id]) {
-        newErrors[field.id] = language === 'uz' ? 'Tanlash shart' : 'Выберите вариант';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handlePhoneChange = (value: string) => {
+  // Phone formatting for phone fields
+  const handlePhoneChange = (fieldId: string, value: string) => {
     let cleaned = value.replace(/\D/g, '');
     if (!cleaned.startsWith('998')) {
       cleaned = '998' + cleaned;
@@ -91,7 +63,34 @@ export default function Checkout() {
     if (cleaned.length > 8) formatted += ' ' + cleaned.slice(8, 10);
     if (cleaned.length > 10) formatted += ' ' + cleaned.slice(10, 12);
     
-    setFormData({ ...formData, phone: formatted });
+    setFieldValues({ ...fieldValues, [fieldId]: formatted });
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    checkoutFields.forEach(field => {
+      const value = fieldValues[field.id]?.trim() || '';
+      
+      if (field.is_required && !value) {
+        if (field.field_type === 'radio') {
+          newErrors[field.id] = language === 'uz' ? 'Tanlash shart' : 'Выберите вариант';
+        } else {
+          newErrors[field.id] = language === 'uz' ? 'To\'ldirish shart' : 'Обязательное поле';
+        }
+      }
+
+      // Phone validation
+      if (field.field_type === 'phone' && value) {
+        const cleanedPhone = value.replace(/\s/g, '');
+        if (!/^\+998\d{9}$/.test(cleanedPhone)) {
+          newErrors[field.id] = language === 'uz' ? 'Noto\'g\'ri telefon formati' : 'Неверный формат телефона';
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,20 +109,28 @@ export default function Checkout() {
     setIsSubmitting(true);
 
     try {
-      // Build order message from dynamic fields
-      const dynamicMessages = checkoutFields
-        .filter(field => dynamicValues[field.id])
+      // Find name and phone fields
+      const nameField = checkoutFields.find(f => f.field_type === 'text' && f.sort_order === 0);
+      const phoneField = checkoutFields.find(f => f.field_type === 'phone');
+      
+      const customerName = nameField ? (fieldValues[nameField.id] || '').trim() : '';
+      const customerPhone = phoneField ? (fieldValues[phoneField.id] || '').replace(/\s/g, '') : '';
+
+      // Build customer message from all other fields
+      const messageFields = checkoutFields
+        .filter(f => f.id !== nameField?.id && f.id !== phoneField?.id && fieldValues[f.id])
         .map(field => {
-          const fieldLabel = language === 'uz' ? field.label_uz : field.label_ru;
-          const optionLabel = getOptionLabel(field, dynamicValues[field.id]);
-          return `${fieldLabel}: ${optionLabel}`;
+          const label = getFieldLabel(field);
+          let value = fieldValues[field.id];
+          
+          if (field.field_type === 'radio') {
+            value = getOptionLabel(field, value);
+          }
+          
+          return `${label}: ${value}`;
         });
 
-      const customerMessage = [
-        ...dynamicMessages,
-        formData.preferredTime && `Qo'ng'iroq vaqti: ${formData.preferredTime}`,
-        formData.comment && `Izoh: ${formData.comment}`,
-      ].filter(Boolean).join('\n') || undefined;
+      const customerMessage = messageFields.length > 0 ? messageFields.join('\n') : undefined;
 
       const orderItems = items.map(item => ({
         product_id: item.product.id,
@@ -136,8 +143,8 @@ export default function Checkout() {
 
       const { data: orderResult, error: orderError } = await supabase.functions.invoke('create-order', {
         body: {
-          customer_name: formData.fullName.trim(),
-          customer_phone: formData.phone.replace(/\s/g, ''),
+          customer_name: customerName,
+          customer_phone: customerPhone,
           customer_message: customerMessage,
           items: orderItems,
         },
@@ -161,6 +168,95 @@ export default function Checkout() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Render a single field based on its type
+  const renderField = (field: CheckoutField) => {
+    const IconComponent = field.icon ? iconMap[field.icon] : null;
+    const label = getFieldLabel(field);
+    const value = fieldValues[field.id] || '';
+    const error = errors[field.id];
+
+    const labelElement = (
+      <Label htmlFor={field.id} className="flex items-center gap-2">
+        {IconComponent && <IconComponent className="w-4 h-4" />}
+        {label} {field.is_required && '*'}
+      </Label>
+    );
+
+    switch (field.field_type) {
+      case 'text':
+        return (
+          <div key={field.id} className="space-y-2">
+            {labelElement}
+            <Input
+              id={field.id}
+              value={value}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              placeholder={language === 'uz' ? `${label}ni kiriting` : `Введите ${label.toLowerCase()}`}
+              className={error ? 'border-destructive' : ''}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        );
+
+      case 'phone':
+        return (
+          <div key={field.id} className="space-y-2">
+            {labelElement}
+            <Input
+              id={field.id}
+              type="tel"
+              value={value}
+              onChange={(e) => handlePhoneChange(field.id, e.target.value)}
+              placeholder="+998 90 123 45 67"
+              className={error ? 'border-destructive' : ''}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div key={field.id} className="space-y-2">
+            {labelElement}
+            <Textarea
+              id={field.id}
+              value={value}
+              onChange={(e) => setFieldValues({ ...fieldValues, [field.id]: e.target.value })}
+              placeholder={language === 'uz' ? 'Savollaringiz yoki izohlaringiz...' : 'Ваши вопросы или комментарии...'}
+              rows={3}
+              className={error ? 'border-destructive' : ''}
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        );
+
+      case 'radio':
+        return (
+          <div key={field.id} className="space-y-3">
+            {labelElement}
+            <RadioGroup
+              value={value}
+              onValueChange={(val) => setFieldValues({ ...fieldValues, [field.id]: val })}
+              className="space-y-2"
+            >
+              {field.options.map((option) => (
+                <div key={option.id} className="flex items-center space-x-3">
+                  <RadioGroupItem value={option.value} id={option.id} />
+                  <Label htmlFor={option.id} className="font-normal cursor-pointer">
+                    {language === 'uz' ? option.label_uz : option.label_ru}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -198,111 +294,14 @@ export default function Checkout() {
           {/* Order Form */}
           <div className="lg:col-span-3">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Full Name */}
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {language === 'uz' ? 'To\'liq ism' : 'Полное имя'} *
-                </Label>
-                <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder={language === 'uz' ? 'Ismingizni kiriting' : 'Введите ваше имя'}
-                  className={errors.fullName ? 'border-destructive' : ''}
-                />
-                {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName}</p>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  {language === 'uz' ? 'Telefon raqam' : 'Номер телефона'} *
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  placeholder="+998 90 123 45 67"
-                  className={errors.phone ? 'border-destructive' : ''}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone}</p>
-                )}
-              </div>
-
-              {/* Dynamic Radio Fields */}
+              {/* Dynamic Fields */}
               {fieldsLoading ? (
                 <div className="py-4 flex justify-center">
                   <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
                 </div>
               ) : (
-                checkoutFields.map((field) => {
-                  const IconComponent = field.icon ? iconMap[field.icon] : Home;
-                  const fieldLabel = language === 'uz' ? field.label_uz : field.label_ru;
-
-                  return (
-                    <div key={field.id} className="space-y-3">
-                      <Label className="flex items-center gap-2">
-                        {IconComponent && <IconComponent className="w-4 h-4" />}
-                        {fieldLabel} {field.is_required && '*'}
-                      </Label>
-                      <RadioGroup
-                        value={dynamicValues[field.id] || ''}
-                        onValueChange={(value) =>
-                          setDynamicValues({ ...dynamicValues, [field.id]: value })
-                        }
-                        className="space-y-2"
-                      >
-                        {field.options.map((option) => (
-                          <div key={option.id} className="flex items-center space-x-3">
-                            <RadioGroupItem value={option.value} id={option.id} />
-                            <Label htmlFor={option.id} className="font-normal cursor-pointer">
-                              {language === 'uz' ? option.label_uz : option.label_ru}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
-                      {errors[field.id] && (
-                        <p className="text-sm text-destructive">{errors[field.id]}</p>
-                      )}
-                    </div>
-                  );
-                })
+                checkoutFields.map(renderField)
               )}
-
-              {/* Preferred Contact Time */}
-              <div className="space-y-2">
-                <Label htmlFor="preferredTime" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  {language === 'uz' ? 'Qo\'ng\'iroq uchun qulay vaqt' : 'Удобное время для звонка'}
-                </Label>
-                <Input
-                  id="preferredTime"
-                  value={formData.preferredTime}
-                  onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
-                  placeholder={language === 'uz' ? 'Masalan: 10:00 - 18:00' : 'Например: 10:00 - 18:00'}
-                />
-              </div>
-
-              {/* Comment */}
-              <div className="space-y-2">
-                <Label htmlFor="comment" className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  {language === 'uz' ? 'Qo\'shimcha izoh' : 'Дополнительный комментарий'}
-                </Label>
-                <Textarea
-                  id="comment"
-                  value={formData.comment}
-                  onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                  placeholder={language === 'uz' ? 'Savollaringiz yoki izohlaringiz...' : 'Ваши вопросы или комментарии...'}
-                  rows={3}
-                />
-              </div>
 
               {/* Submit Button - Mobile */}
               <div className="lg:hidden">
@@ -310,7 +309,7 @@ export default function Checkout() {
                   type="submit"
                   size="lg"
                   className="w-full rounded-full h-14 text-base font-semibold"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || fieldsLoading}
                 >
                   {isSubmitting 
                     ? (language === 'uz' ? 'Yuborilmoqda...' : 'Отправка...') 
@@ -378,7 +377,7 @@ export default function Checkout() {
                   form="checkout-form"
                   size="lg"
                   className="w-full rounded-full h-12 text-base font-semibold hidden lg:flex"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || fieldsLoading}
                   onClick={handleSubmit}
                 >
                   {isSubmitting 

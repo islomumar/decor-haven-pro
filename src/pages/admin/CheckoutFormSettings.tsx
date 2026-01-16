@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Plus, Save, Trash2, GripVertical, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,6 +34,22 @@ interface CheckoutField {
   options?: CheckoutFieldOption[];
 }
 
+const FIELD_TYPES = [
+  { value: 'text', label: 'Matn (Text)' },
+  { value: 'phone', label: 'Telefon raqam' },
+  { value: 'textarea', label: 'Ko\'p qatorli matn' },
+  { value: 'radio', label: 'Tanlov (Radio)' },
+];
+
+const ICONS = [
+  { value: 'User', label: 'Foydalanuvchi' },
+  { value: 'Phone', label: 'Telefon' },
+  { value: 'Home', label: 'Uy' },
+  { value: 'Clock', label: 'Soat' },
+  { value: 'MessageSquare', label: 'Izoh' },
+  { value: 'HelpCircle', label: 'Savol' },
+];
+
 export default function CheckoutFormSettings() {
   const [fields, setFields] = useState<CheckoutField[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +63,7 @@ export default function CheckoutFormSettings() {
   const [fieldForm, setFieldForm] = useState({
     label_uz: '',
     label_ru: '',
+    field_type: 'text',
     icon: '',
     is_required: false,
     is_active: true,
@@ -88,8 +107,8 @@ export default function CheckoutFormSettings() {
       }));
 
       setFields(fieldsWithOptions);
-      // Expand all fields by default
-      setExpandedFields(new Set(fieldsWithOptions.map(f => f.id)));
+      // Expand radio fields by default
+      setExpandedFields(new Set(fieldsWithOptions.filter(f => f.field_type === 'radio').map(f => f.id)));
     } catch (error) {
       console.error('Error fetching fields:', error);
       toast({
@@ -112,6 +131,11 @@ export default function CheckoutFormSettings() {
     setExpandedFields(newExpanded);
   };
 
+  const getFieldTypeBadge = (type: string) => {
+    const typeInfo = FIELD_TYPES.find(t => t.value === type);
+    return typeInfo?.label || type;
+  };
+
   // Field CRUD
   const openFieldDialog = (field?: CheckoutField) => {
     if (field) {
@@ -119,6 +143,7 @@ export default function CheckoutFormSettings() {
       setFieldForm({
         label_uz: field.label_uz,
         label_ru: field.label_ru,
+        field_type: field.field_type,
         icon: field.icon || '',
         is_required: field.is_required,
         is_active: field.is_active,
@@ -128,6 +153,7 @@ export default function CheckoutFormSettings() {
       setFieldForm({
         label_uz: '',
         label_ru: '',
+        field_type: 'text',
         icon: '',
         is_required: false,
         is_active: true,
@@ -154,6 +180,7 @@ export default function CheckoutFormSettings() {
           .update({
             label_uz: fieldForm.label_uz,
             label_ru: fieldForm.label_ru,
+            field_type: fieldForm.field_type,
             icon: fieldForm.icon || null,
             is_required: fieldForm.is_required,
             is_active: fieldForm.is_active,
@@ -169,7 +196,7 @@ export default function CheckoutFormSettings() {
           .insert({
             label_uz: fieldForm.label_uz,
             label_ru: fieldForm.label_ru,
-            field_type: 'radio',
+            field_type: fieldForm.field_type,
             icon: fieldForm.icon || null,
             is_required: fieldForm.is_required,
             is_active: fieldForm.is_active,
@@ -389,7 +416,7 @@ export default function CheckoutFormSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Checkout formasini sozlash</h1>
-          <p className="text-muted-foreground">Buyurtma formasidagi radio maydonlarni boshqaring</p>
+          <p className="text-muted-foreground">Buyurtma formasidagi barcha maydonlarni boshqaring</p>
         </div>
         <Button onClick={() => openFieldDialog()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -420,17 +447,18 @@ export default function CheckoutFormSettings() {
                     <div className="flex items-center gap-3">
                       <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                       <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
+                        <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
                           {field.label_uz}
+                          <Badge variant="secondary">{getFieldTypeBadge(field.field_type)}</Badge>
                           {field.is_required && (
-                            <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">
+                            <Badge variant="destructive" className="text-xs">
                               Majburiy
-                            </span>
+                            </Badge>
                           )}
                           {!field.is_active && (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                            <Badge variant="outline" className="text-xs">
                               O'chirilgan
-                            </span>
+                            </Badge>
                           )}
                         </CardTitle>
                         <CardDescription>{field.label_ru}</CardDescription>
@@ -464,96 +492,97 @@ export default function CheckoutFormSettings() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          {expandedFields.has(field.id) ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
+                      {field.field_type === 'radio' && (
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            {expandedFields.has(field.id) ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </CollapsibleTrigger>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
 
-                <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="border rounded-lg p-4 bg-muted/30">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium">Variantlar</h4>
-                        <Button size="sm" variant="outline" onClick={() => openOptionDialog(field.id)}>
-                          <Plus className="mr-1 h-3 w-3" />
-                          Variant qo'shish
-                        </Button>
-                      </div>
+                {field.field_type === 'radio' && (
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div className="border rounded-lg p-4 bg-muted/30">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium">Variantlar</h4>
+                          <Button size="sm" variant="outline" onClick={() => openOptionDialog(field.id)}>
+                            <Plus className="mr-1 h-3 w-3" />
+                            Variant qo'shish
+                          </Button>
+                        </div>
 
-                      {field.options && field.options.length > 0 ? (
-                        <div className="space-y-2">
-                          {field.options.map((option, optIndex) => (
-                            <div
-                              key={option.id}
-                              className={`flex items-center justify-between p-3 bg-background rounded-lg border ${
-                                !option.is_active ? 'opacity-50' : ''
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                                <div className="w-4 h-4 rounded-full border-2 border-primary" />
-                                <div>
-                                  <span className="font-medium">{option.label_uz}</span>
-                                  <span className="text-muted-foreground text-sm ml-2">
-                                    ({option.label_ru})
-                                  </span>
+                        {field.options && field.options.length > 0 ? (
+                          <div className="space-y-2">
+                            {field.options.map((option, optIndex) => (
+                              <div
+                                key={option.id}
+                                className={`flex items-center justify-between p-3 bg-background rounded-lg border ${
+                                  !option.is_active ? 'opacity-50' : ''
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                                  <div>
+                                    <p className="font-medium">{option.label_uz}</p>
+                                    <p className="text-sm text-muted-foreground">{option.label_ru}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => moveOption(field.id, option.id, 'up')}
+                                    disabled={optIndex === 0}
+                                  >
+                                    <ChevronUp className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => moveOption(field.id, option.id, 'down')}
+                                    disabled={optIndex === field.options!.length - 1}
+                                  >
+                                    <ChevronDown className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => openOptionDialog(field.id, option)}
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    onClick={() => deleteOption(option.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => moveOption(field.id, option.id, 'up')}
-                                  disabled={optIndex === 0}
-                                >
-                                  <ChevronUp className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => moveOption(field.id, option.id, 'down')}
-                                  disabled={optIndex === (field.options?.length || 0) - 1}
-                                >
-                                  <ChevronDown className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => openOptionDialog(field.id, option)}
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => deleteOption(option.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          Hozircha variantlar yo'q
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Hozircha variantlar yo'q
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                )}
               </Collapsible>
             </Card>
           ))}
@@ -564,33 +593,62 @@ export default function CheckoutFormSettings() {
       <Dialog open={fieldDialogOpen} onOpenChange={setFieldDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingField ? 'Maydonni tahrirlash' : 'Yangi maydon'}</DialogTitle>
+            <DialogTitle>
+              {editingField ? 'Maydonni tahrirlash' : 'Yangi maydon'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Sarlavha (O'zbekcha)</Label>
+              <Label>Nomi (O'zbekcha)</Label>
               <Input
                 value={fieldForm.label_uz}
                 onChange={(e) => setFieldForm({ ...fieldForm, label_uz: e.target.value })}
-                placeholder="Masalan: Uyingiz holati"
+                placeholder="Masalan: To'liq ism"
               />
             </div>
             <div className="space-y-2">
-              <Label>Sarlavha (Ruscha)</Label>
+              <Label>Nomi (Ruscha)</Label>
               <Input
                 value={fieldForm.label_ru}
                 onChange={(e) => setFieldForm({ ...fieldForm, label_ru: e.target.value })}
-                placeholder="Например: Состояние дома"
+                placeholder="Masalan: Полное имя"
               />
             </div>
             <div className="space-y-2">
-              <Label>Ikonka nomi (ixtiyoriy)</Label>
-              <Input
+              <Label>Maydon turi</Label>
+              <Select
+                value={fieldForm.field_type}
+                onValueChange={(value) => setFieldForm({ ...fieldForm, field_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FIELD_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Ikonka</Label>
+              <Select
                 value={fieldForm.icon}
-                onChange={(e) => setFieldForm({ ...fieldForm, icon: e.target.value })}
-                placeholder="Masalan: Home, User, Phone"
-              />
-              <p className="text-xs text-muted-foreground">Lucide ikonkalar nomlaridan foydalaning</p>
+                onValueChange={(value) => setFieldForm({ ...fieldForm, icon: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ikonka tanlang" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ICONS.map((icon) => (
+                    <SelectItem key={icon.value} value={icon.value}>
+                      {icon.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label>Majburiy maydon</Label>
@@ -612,7 +670,6 @@ export default function CheckoutFormSettings() {
               Bekor qilish
             </Button>
             <Button onClick={saveField} disabled={saving}>
-              <Save className="mr-2 h-4 w-4" />
               {saving ? 'Saqlanmoqda...' : 'Saqlash'}
             </Button>
           </DialogFooter>
@@ -623,23 +680,25 @@ export default function CheckoutFormSettings() {
       <Dialog open={optionDialogOpen} onOpenChange={setOptionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingOption ? 'Variantni tahrirlash' : 'Yangi variant'}</DialogTitle>
+            <DialogTitle>
+              {editingOption ? 'Variantni tahrirlash' : 'Yangi variant'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Matn (O'zbekcha)</Label>
+              <Label>Nomi (O'zbekcha)</Label>
               <Input
                 value={optionForm.label_uz}
                 onChange={(e) => setOptionForm({ ...optionForm, label_uz: e.target.value })}
-                placeholder="Masalan: Uy to'liq tayyor"
+                placeholder="Masalan: Uy tayyor"
               />
             </div>
             <div className="space-y-2">
-              <Label>Matn (Ruscha)</Label>
+              <Label>Nomi (Ruscha)</Label>
               <Input
                 value={optionForm.label_ru}
                 onChange={(e) => setOptionForm({ ...optionForm, label_ru: e.target.value })}
-                placeholder="Например: Дом полностью готов"
+                placeholder="Masalan: Дом готов"
               />
             </div>
             <div className="space-y-2">
@@ -647,9 +706,8 @@ export default function CheckoutFormSettings() {
               <Input
                 value={optionForm.value}
                 onChange={(e) => setOptionForm({ ...optionForm, value: e.target.value })}
-                placeholder="Masalan: finished"
+                placeholder="Masalan: ready"
               />
-              <p className="text-xs text-muted-foreground">Tizim ichida foydalaniladigan unikal qiymat</p>
             </div>
             <div className="flex items-center justify-between">
               <Label>Faol</Label>
@@ -664,7 +722,6 @@ export default function CheckoutFormSettings() {
               Bekor qilish
             </Button>
             <Button onClick={saveOption} disabled={saving}>
-              <Save className="mr-2 h-4 w-4" />
               {saving ? 'Saqlanmoqda...' : 'Saqlash'}
             </Button>
           </DialogFooter>

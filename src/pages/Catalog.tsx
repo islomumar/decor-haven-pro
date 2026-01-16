@@ -70,7 +70,7 @@ export default function Catalog() {
 
   // SEO - canonical to page 1 for paginated pages
   useSEO({
-    title: `${t.catalog.title} | ${settings.site_name || 'Mebel Store'}`,
+    title: `${t.catalog.title} | ${settings?.site_name || 'Mebel Store'}`,
     description: t.catalog.title,
     canonical: currentPage > 1 ? '/catalog' : undefined,
   });

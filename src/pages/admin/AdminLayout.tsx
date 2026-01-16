@@ -14,6 +14,7 @@ import {
   Users,
   Shield,
   FileText,
+  ClipboardList,
   Settings2,
   LucideIcon
 } from 'lucide-react';
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { title: 'Mahsulotlar', url: '/admin/products', icon: Package, module: 'products' },
   { title: 'Mijozlar', url: '/admin/customers', icon: Users, module: 'customers' },
   { title: 'Sayt kontenti', url: '/admin/content', icon: FileText, module: 'siteContent' },
+  { title: 'Checkout formasi', url: '/admin/checkout-form', icon: ClipboardList, module: 'siteContent' },
   { title: 'Mavzular', url: '/admin/themes', icon: Palette, module: 'themes' },
   { title: 'Adminlar', url: '/admin/admins', icon: Shield, module: 'admins' },
   { title: 'Telegram', url: '/admin/settings', icon: Settings, module: 'telegram' },

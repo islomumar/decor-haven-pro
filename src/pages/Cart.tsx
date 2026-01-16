@@ -94,9 +94,15 @@ export default function Cart() {
                         </Button>
                       </div>
                       <div className="text-right">
-                        <div className="font-serif text-sm md:text-base font-bold">
-                          {formatPrice(item.product.price * item.quantity)} <span className="text-xs md:text-sm font-normal text-muted-foreground">{t.products.currency}</span>
-                        </div>
+                        {item.product.price > 0 ? (
+                          <div className="font-serif text-sm md:text-base font-bold">
+                            {formatPrice(item.product.price * item.quantity)} <span className="text-xs md:text-sm font-normal text-muted-foreground">{t.products.currency}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {language === 'uz' ? 'Kelishiladi' : 'Договорная'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

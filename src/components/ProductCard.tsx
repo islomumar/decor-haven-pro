@@ -62,13 +62,21 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <span className="font-serif font-bold text-lg text-foreground">
-              {formatPrice(price)}
-            </span>
-            <span className="text-xs text-muted-foreground ml-1">{t.products.currency}</span>
-            {originalPrice && originalPrice > price && (
-              <span className="text-xs text-muted-foreground line-through ml-2">
-                {formatPrice(originalPrice)}
+            {price > 0 ? (
+              <>
+                <span className="font-serif font-bold text-lg text-foreground">
+                  {formatPrice(price)}
+                </span>
+                <span className="text-xs text-muted-foreground ml-1">{t.products.currency}</span>
+                {originalPrice && originalPrice > price && (
+                  <span className="text-xs text-muted-foreground line-through ml-2">
+                    {formatPrice(originalPrice)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {language === 'uz' ? 'Narxi kelishiladi' : 'Цена договорная'}
               </span>
             )}
           </div>

@@ -185,10 +185,16 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                       <div className="flex items-center justify-between mt-auto">
                         {/* Price */}
-                        <span className="font-serif font-bold text-sm">
-                          {formatPrice(price * item.quantity)} 
-                          <span className="text-xs text-muted-foreground ml-0.5">{t.products.currency}</span>
-                        </span>
+                        {price > 0 ? (
+                          <span className="font-serif font-bold text-sm">
+                            {formatPrice(price * item.quantity)} 
+                            <span className="text-xs text-muted-foreground ml-0.5">{t.products.currency}</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {language === 'uz' ? 'Kelishiladi' : 'Договорная'}
+                          </span>
+                        )}
 
                         {/* Quantity controls */}
                         <div className="flex items-center gap-0.5">

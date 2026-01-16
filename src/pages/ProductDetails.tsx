@@ -217,27 +217,17 @@ export default function ProductDetails() {
             <h1 className="font-serif text-3xl font-bold mb-4">{name}</h1>
             {description && <p className="text-muted-foreground mb-6">{description}</p>}
 
-            <div className="flex items-baseline gap-3 mb-6">
-              {price > 0 ? (
-                <>
-                  <span className="font-serif text-3xl font-bold">{formatPrice(price)}</span>
-                  <span className="text-muted-foreground">{t.products.currency}</span>
-                  {product.original_price && product.original_price > price && (
-                    <span className="text-lg text-muted-foreground line-through">
-                      {formatPrice(product.original_price)}
-                    </span>
-                  )}
-                </>
-              ) : product.is_negotiable ? (
-                <span className="font-serif text-xl font-medium text-primary">
-                  {language === 'uz' ? 'Narxi kelishiladi' : 'Цена договорная'}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">
-                  {language === 'uz' ? "Narx ko'rsatilmagan" : 'Цена не указана'}
-                </span>
-              )}
-            </div>
+            {price > 0 && (
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className="font-serif text-3xl font-bold">{formatPrice(price)}</span>
+                <span className="text-muted-foreground">{t.products.currency}</span>
+                {product.original_price && product.original_price > price && (
+                  <span className="text-lg text-muted-foreground line-through">
+                    {formatPrice(product.original_price)}
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Size Selection */}
             {sizes.length > 0 && (

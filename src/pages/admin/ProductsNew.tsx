@@ -12,7 +12,8 @@ import {
   Star,
   Package,
   GripVertical,
-  RefreshCw
+  RefreshCw,
+  Video
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
+import { AddMediaModal, MediaItem } from '@/components/admin/AddMediaModal';
+import { MediaGrid } from '@/components/admin/MediaGrid';
 
 interface Category {
   id: string;
@@ -145,6 +148,8 @@ export default function ProductsNew() {
   const [slugError, setSlugError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -266,9 +271,57 @@ export default function ProductsNew() {
     return category ? (language === 'uz' ? category.name_uz : category.name_ru) : '—';
   };
 
+  // Convert images array to MediaItem array
+  const parseImagesForEdit = (images: string[]): MediaItem[] => {
+    return images.map(url => {
+      // Check if it's a video URL (JSON format stored as string)
+      try {
+        const parsed = JSON.parse(url);
+        if (parsed.type && parsed.url) {
+          return parsed as MediaItem;
+        }
+      } catch {
+        // Not JSON, treat as regular image URL
+      }
+      
+      // Check for YouTube embed URL
+      if (url.includes('youtube.com/embed')) {
+        const videoId = url.split('/embed/')[1]?.split('?')[0];
+        return {
+          type: 'video' as const,
+          url,
+          thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+          platform: 'youtube' as const
+        };
+      }
+      
+      // Check for Instagram embed URL
+      if (url.includes('instagram.com')) {
+        return {
+          type: 'video' as const,
+          url,
+          platform: 'instagram' as const
+        };
+      }
+      
+      return { type: 'image' as const, url };
+    });
+  };
+
+  // Convert MediaItem array to images array for storage
+  const serializeMediaItems = (items: MediaItem[]): string[] => {
+    return items.map(item => {
+      if (item.type === 'video') {
+        return JSON.stringify(item);
+      }
+      return item.url;
+    });
+  };
+
   const openCreateDialog = () => {
     setSelectedProduct(null);
     setFormData(emptyForm);
+    setMediaItems([]);
     setSlugError('');
     setActiveTab('basic');
     setDialogOpen(true);
@@ -276,6 +329,8 @@ export default function ProductsNew() {
 
   const openEditDialog = (product: Product) => {
     setSelectedProduct(product);
+    const parsedMedia = parseImagesForEdit(product.images || []);
+    setMediaItems(parsedMedia);
     setFormData({
       name_uz: product.name_uz,
       name_ru: product.name_ru,
@@ -335,7 +390,7 @@ export default function ProductsNew() {
     if (!files || files.length === 0) return;
 
     setUploading(true);
-    const uploadedUrls: string[] = [];
+    const uploadedMedia: MediaItem[] = [];
 
     try {
       for (const file of Array.from(files)) {
@@ -353,11 +408,13 @@ export default function ProductsNew() {
           .from('product-images')
           .getPublicUrl(filePath);
 
-        uploadedUrls.push(publicUrl);
+        uploadedMedia.push({ type: 'image', url: publicUrl });
       }
 
-      setFormData({ ...formData, images: [...formData.images, ...uploadedUrls] });
-      toast({ title: 'Muvaffaqiyat', description: `${uploadedUrls.length} ta rasm yuklandi` });
+      const newMediaItems = [...mediaItems, ...uploadedMedia];
+      setMediaItems(newMediaItems);
+      setFormData({ ...formData, images: serializeMediaItems(newMediaItems) });
+      toast({ title: 'Muvaffaqiyat', description: `${uploadedMedia.length} ta rasm yuklandi` });
     } catch (error: any) {
       console.error('Upload error:', error);
       toast({ variant: 'destructive', title: 'Xatolik', description: 'Rasmni yuklashda xatolik: ' + error.message });
@@ -367,22 +424,24 @@ export default function ProductsNew() {
     }
   };
 
-  const addImageUrl = () => {
-    if (newImageUrl.trim()) {
-      setFormData({ ...formData, images: [...formData.images, newImageUrl.trim()] });
-      setNewImageUrl('');
-    }
+  const handleAddMedia = (media: MediaItem) => {
+    const newMediaItems = [...mediaItems, media];
+    setMediaItems(newMediaItems);
+    setFormData({ ...formData, images: serializeMediaItems(newMediaItems) });
   };
 
-  const removeImage = (index: number) => {
-    setFormData({ ...formData, images: formData.images.filter((_, i) => i !== index) });
+  const removeMedia = (index: number) => {
+    const newMediaItems = mediaItems.filter((_, i) => i !== index);
+    setMediaItems(newMediaItems);
+    setFormData({ ...formData, images: serializeMediaItems(newMediaItems) });
   };
 
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    const newImages = [...formData.images];
-    const [movedImage] = newImages.splice(fromIndex, 1);
-    newImages.splice(toIndex, 0, movedImage);
-    setFormData({ ...formData, images: newImages });
+  const moveMedia = (fromIndex: number, toIndex: number) => {
+    const newMediaItems = [...mediaItems];
+    const [movedItem] = newMediaItems.splice(fromIndex, 1);
+    newMediaItems.splice(toIndex, 0, movedItem);
+    setMediaItems(newMediaItems);
+    setFormData({ ...formData, images: serializeMediaItems(newMediaItems) });
   };
 
   const handleSubmit = async () => {
@@ -901,87 +960,51 @@ export default function ProductsNew() {
               </div>
             </TabsContent>
 
-            {/* Images Tab */}
+            {/* Media Tab */}
             <TabsContent value="images" className="space-y-4 mt-4">
-              {/* Upload Section */}
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground mb-3">Rasmlarni yuklash uchun bosing</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                >
-                  {uploading ? 'Yuklanmoqda...' : 'Rasm tanlash'}
-                </Button>
-              </div>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
 
-              {/* URL Input */}
-              <div className="flex gap-2">
-                <Input
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="Rasm URL manzilini kiriting..."
-                  className="flex-1"
-                />
-                <Button variant="outline" onClick={addImageUrl} disabled={!newImageUrl.trim()}>
-                  Qo'shish
-                </Button>
-              </div>
-
-              {/* Images Grid */}
-              {formData.images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image}
-                        alt={`Image ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgeD0iMyIgeT0iMyIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cG9seWxpbmUgcG9pbnRzPSIyMSAxNSAxNiAxMCA1IDIxIi8+PC9zdmc+';
-                        }}
-                      />
-                      {index === 0 && (
-                        <Badge className="absolute top-2 left-2" variant="secondary">Asosiy</Badge>
-                      )}
-                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {index > 0 && (
-                          <Button 
-                            variant="secondary" 
-                            size="icon" 
-                            className="h-6 w-6"
-                            onClick={() => moveImage(index, index - 1)}
-                          >
-                            <GripVertical className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
-                          className="h-6 w-6"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+              {/* Add Media Button */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Media fayllari
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Rasmlar va videolarni qo'shing
+                  </p>
                 </div>
-              )}
+                <Button onClick={() => setMediaModalOpen(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Media qo'shish
+                </Button>
+              </div>
 
-              {formData.images.length === 0 && (
-                <p className="text-center text-muted-foreground py-4">
-                  Hech qanday rasm qo'shilmagan
-                </p>
+              {/* Media Grid */}
+              <MediaGrid 
+                items={mediaItems}
+                onRemove={removeMedia}
+                onMove={moveMedia}
+              />
+
+              {/* Media count */}
+              {mediaItems.length > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>
+                    Jami: {mediaItems.length} ta media 
+                    ({mediaItems.filter(m => m.type === 'image').length} rasm, {mediaItems.filter(m => m.type === 'video').length} video)
+                  </span>
+                  <span>Birinchi media asosiy rasm sifatida ko'rsatiladi</span>
+                </div>
               )}
             </TabsContent>
 
@@ -1210,6 +1233,15 @@ export default function ProductsNew() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Media Modal */}
+      <AddMediaModal
+        isOpen={mediaModalOpen}
+        onClose={() => setMediaModalOpen(false)}
+        onAddMedia={handleAddMedia}
+        onUploadImages={() => fileInputRef.current?.click()}
+        uploading={uploading}
+      />
     </div>
   );
 }

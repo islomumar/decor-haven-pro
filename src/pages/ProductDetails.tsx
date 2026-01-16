@@ -1,15 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, ShoppingBag, MessageCircle, Phone, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingBag, MessageCircle, Phone, Check, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductCard } from '@/components/ProductCard';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { LazyImage } from '@/components/LazyImage';
+import { VideoPlayerModal } from '@/components/VideoPlayerModal';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useCart } from '@/hooks/useCart';
 import { useProductById, useProducts, useCategories, Product } from '@/hooks/useProducts';
 import { useAuth } from '@/hooks/useAuth';
+
+interface MediaItem {
+  type: 'image' | 'video';
+  url: string;
+  thumbnail?: string;
+  platform?: 'youtube' | 'instagram';
+}
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -20,6 +28,8 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
 
   // Fetch product from database by ID or slug
   const { product, loading, error } = useProductById(id || '');
@@ -33,6 +43,29 @@ export default function ProductDetails() {
 
   // Filter out current product from related
   const filteredRelated = relatedProducts.filter(p => p.id !== product?.id).slice(0, 4);
+
+  // Parse media items from images array
+  const mediaItems = useMemo((): MediaItem[] => {
+    if (!product?.images) return [];
+    return product.images.map(item => {
+      try {
+        const parsed = JSON.parse(item);
+        if (parsed.type && parsed.url) return parsed as MediaItem;
+      } catch {}
+      if (item.includes('youtube.com/embed')) {
+        const videoId = item.split('/embed/')[1]?.split('?')[0];
+        return { type: 'video', url: item, thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`, platform: 'youtube' };
+      }
+      if (item.includes('instagram.com')) {
+        return { type: 'video', url: item, platform: 'instagram' };
+      }
+      return { type: 'image', url: item };
+    });
+  }, [product?.images]);
+
+  const imageItems = mediaItems.filter(m => m.type === 'image');
+  const videoItems = mediaItems.filter(m => m.type === 'video');
+  const galleryImages = imageItems.map(m => m.url);
 
   // Reset selected image when product changes
   useEffect(() => {
@@ -78,7 +111,7 @@ export default function ProductDetails() {
   
   const formatPrice = (price: number) => price.toLocaleString('uz-UZ');
   const inCart = isInCart(product.id);
-  const images = product.images || [];
+  const images = galleryImages;
   const materials = product.materials || [];
   const sizes = product.sizes || [];
   const colors = product.colors || [];
@@ -153,6 +186,22 @@ export default function ProductDetails() {
               isOpen={lightboxOpen}
               onClose={() => setLightboxOpen(false)}
             />
+
+            {/* Video Button */}
+            {videoItems.length > 0 && (
+              <Button
+                variant="outline"
+                className="w-full mt-4 gap-2"
+                onClick={() => {
+                  setSelectedVideo(videoItems[0]);
+                  setVideoModalOpen(true);
+                }}
+              >
+                <Play className="w-4 h-4" />
+                {language === 'uz' ? 'Videoni ko\'rish' : 'Смотреть видео'}
+                {videoItems.length > 1 && ` (${videoItems.length})`}
+              </Button>
+            )}
           </div>
 
           {/* Info */}
@@ -317,6 +366,14 @@ export default function ProductDetails() {
           </div>
         )}
       </div>
+
+      {/* Video Player Modal */}
+      <VideoPlayerModal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={selectedVideo?.url || ''}
+        platform={selectedVideo?.platform}
+      />
     </div>
   );
 }

@@ -45,6 +45,40 @@ export default function Admins() {
   const { user, isAdmin, session } = useAuth();
   const { toast } = useToast();
 
+  const getInvokeErrorMessage = (err: unknown, fallback = 'Xatolik yuz berdi') => {
+    // supabase.functions.invoke returns a FunctionsHttpError for non-2xx responses.
+    // That error's .message is generic, but the real error is usually in context.body.
+    if (!err || typeof err !== 'object') return fallback;
+
+    const anyErr = err as any;
+
+    // Common: new Error(message)
+    if (typeof anyErr?.message === 'string' && anyErr.message.trim()) {
+      const msg = anyErr.message.trim();
+      // If it's the generic Supabase Functions error, try to extract the JSON body.
+      if (msg.toLowerCase().includes('edge function returned') || msg.toLowerCase().includes('non-2xx')) {
+        const body = anyErr?.context?.body;
+        if (typeof body === 'string' && body) {
+          try {
+            const parsed = JSON.parse(body);
+            if (typeof parsed?.error === 'string' && parsed.error.trim()) return parsed.error.trim();
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      return msg;
+    }
+
+    // Sometimes err itself is { error: string }
+    if (typeof (anyErr as any)?.error === 'string' && (anyErr as any).error.trim()) {
+      return (anyErr as any).error.trim();
+    }
+
+    return fallback;
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
@@ -113,7 +147,7 @@ export default function Admins() {
         },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) throw response.error;
       if (response.data?.error) throw new Error(response.data.error);
 
       toast({ title: 'Muvaffaqiyat', description: 'Foydalanuvchi yaratildi' });
@@ -121,7 +155,7 @@ export default function Admins() {
       resetForm();
       fetchUsers();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+      toast({ variant: 'destructive', title: 'Xatolik', description: getInvokeErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -142,14 +176,14 @@ export default function Admins() {
         },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) throw response.error;
       if (response.data?.error) throw new Error(response.data.error);
 
       toast({ title: 'Muvaffaqiyat', description: 'Foydalanuvchi yangilandi' });
       setEditDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+      toast({ variant: 'destructive', title: 'Xatolik', description: getInvokeErrorMessage(error) });
     } finally {
       setSaving(false);
     }
@@ -167,14 +201,14 @@ export default function Admins() {
         },
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) throw response.error;
       if (response.data?.error) throw new Error(response.data.error);
 
       toast({ title: 'Muvaffaqiyat', description: 'Foydalanuvchi o\'chirildi' });
       setDeleteDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+      toast({ variant: 'destructive', title: 'Xatolik', description: getInvokeErrorMessage(error) });
     } finally {
       setSaving(false);
     }

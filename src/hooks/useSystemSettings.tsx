@@ -158,16 +158,17 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
     if (!settings) return;
     writeCachedSiteAssets({
       logo_url: settings.logo_url || null,
-      favicon_url: settings.favicon_url || null,
+      favicon_url: settings.favicon_url || settings.logo_url || null,
     });
   }, [settings?.logo_url, settings?.favicon_url]);
 
-  // Update favicon when settings change
+  // Update favicon when settings change — fallback to logo if no favicon set
   useEffect(() => {
-    if (settings?.favicon_url) {
-      updateFavicon(settings.favicon_url);
+    const faviconSrc = settings?.favicon_url || settings?.logo_url;
+    if (faviconSrc) {
+      updateFavicon(faviconSrc);
     }
-  }, [settings?.favicon_url]);
+  }, [settings?.favicon_url, settings?.logo_url]);
 
   const updateFavicon = (url: string) => {
     const version = getAssetVersion(url);

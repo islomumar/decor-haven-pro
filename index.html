@@ -12,7 +12,7 @@
           var raw = localStorage.getItem('site-assets-cache-v1');
           if (!raw) return;
           var parsed = JSON.parse(raw);
-          var url = parsed && parsed.favicon_url;
+          var url = parsed && (parsed.favicon_url || parsed.logo_url);
           if (!url) return;
           var clean = String(url).split('#')[0];
           var pathPart = clean.split('?')[0];

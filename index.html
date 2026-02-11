@@ -3,10 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Prevent browser from pinning an old cached favicon before app loads -->
     <link rel="icon" href="/favicon.png" type="image/png" />
     <script>
-      // Set favicon as early as possible from cached settings (prevents "old favicon" on refresh)
+      // Set favicon as early as possible from cached settings
       (function () {
         try {
           var raw = localStorage.getItem('site-assets-cache-v1');
@@ -32,17 +31,17 @@
         } catch (e) {}
       })();
     </script>
-    <title>Mebel Do'koni</title>
-    <meta name="description" content="Premium mebel do'koni - eng sifatli mebellar" />
-    <meta name="author" content="Mebel Do'koni" />
+    <title>Chorrom - hashamatli romlar. Mukammal hayot uchun.</title>
+    <meta name="description" content="Chorrom - hashamatli romlar. Mukammal hayot uchun." />
+    <meta name="author" content="Chorrom" />
 
-    <meta property="og:title" content="Mebel Do'koni" />
-    <meta property="og:description" content="Premium mebel do'koni - eng sifatli mebellar" />
+    <meta property="og:title" content="Chorrom - hashamatli romlar. Mukammal hayot uchun." />
+    <meta property="og:description" content="Chorrom - hashamatli romlar. Mukammal hayot uchun." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:site" content="@Chorrom" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <!-- Google Fonts for themes -->
@@ -53,7 +52,7 @@
 
   <body>
     <script>
-      // Inline theme initialization to prevent FOUC - NO DEFAULT THEME
+      // Inline theme initialization — ONLY from cache, NO defaults
       (function() {
         try {
           var cached = localStorage.getItem('furniture-active-theme');
@@ -61,7 +60,6 @@
             var theme = JSON.parse(cached);
             var root = document.documentElement;
             
-            // Apply colors
             if (theme.colorPalette) {
               Object.keys(theme.colorPalette).forEach(function(key) {
                 var cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -69,14 +67,12 @@
               });
             }
             
-            // Apply typography
             if (theme.typography) {
               if (theme.typography.fontSans) root.style.setProperty('--font-sans', theme.typography.fontSans);
               if (theme.typography.fontSerif) root.style.setProperty('--font-serif', theme.typography.fontSerif);
               if (theme.typography.fontHeading) root.style.setProperty('--font-heading', theme.typography.fontHeading);
             }
             
-            // Apply component styles
             if (theme.componentStyles) {
               if (theme.componentStyles.borderRadius) root.style.setProperty('--radius', theme.componentStyles.borderRadius);
               if (theme.componentStyles.buttonRadius) root.style.setProperty('--button-radius', theme.componentStyles.buttonRadius);
@@ -86,26 +82,23 @@
               if (theme.componentStyles.shadowLg) root.style.setProperty('--shadow-lg', theme.componentStyles.shadowLg);
             }
             
-            // Apply layout settings
             if (theme.layoutSettings) {
               if (theme.layoutSettings.containerMaxWidth) root.style.setProperty('--container-max-width', theme.layoutSettings.containerMaxWidth);
               if (theme.layoutSettings.sectionSpacing) root.style.setProperty('--section-spacing', theme.layoutSettings.sectionSpacing);
               if (theme.layoutSettings.cardPadding) root.style.setProperty('--card-padding', theme.layoutSettings.cardPadding);
             }
             
-            // Dark mode
             if (theme.isDark) {
               root.classList.add('dark');
             }
             
-            // Mark theme as loaded
             root.setAttribute('data-theme-loaded', 'true');
           }
         } catch (e) {}
       })();
     </script>
     <style>
-      /* Hide body until theme is loaded - prevents FOUC */
+      /* Hide body until theme is loaded — prevents FOUC, NO default UI */
       html:not([data-theme-loaded]) body > #root {
         visibility: hidden;
       }
@@ -136,7 +129,6 @@
       @keyframes theme-loader-spin {
         to { transform: translate(-50%, -50%) rotate(360deg); }
       }
-      /* Show content once theme is loaded */
       html[data-theme-loaded] body > #root {
         visibility: visible;
       }

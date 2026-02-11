@@ -2,101 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme-driven Design System - No hardcoded defaults */
-/* All values are set dynamically via CSS variables from the active theme */
-
-@layer base {
-  :root {
-    /* These are placeholder values - actual values come from active theme */
-    /* Colors - will be overwritten by theme */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 0 0% 20%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 20%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 20%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 20%;
-    --radius: 0.75rem;
-
-    /* Sidebar - will be overwritten by theme */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 0 0% 20%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 20%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 20%;
-
-    /* Custom theme tokens - will be overwritten by theme */
-    --warm-cream: 0 0% 98%;
-    --warm-beige: 0 0% 94%;
-    --warm-brown: 0 0% 40%;
-    --dark-wood: 0 0% 20%;
-    --gold-accent: 0 0% 60%;
-    --sage-green: 0 0% 50%;
-
-    /* Typography - will be overwritten by theme */
-    --font-sans: system-ui, sans-serif;
-    --font-serif: Georgia, serif;
-    --font-heading: Georgia, serif;
-
-    /* Component styles - will be overwritten by theme */
-    --button-radius: 0.5rem;
-    --card-radius: 0.75rem;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-
-    /* Layout - will be overwritten by theme */
-    --container-max-width: 1280px;
-    --section-spacing: 4rem;
-    --card-padding: 1.5rem;
-  }
-
-  .dark {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 0 0% 80%;
-    --primary-foreground: 0 0% 5%;
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 80%;
-
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 0 0% 80%;
-    --sidebar-primary-foreground: 0 0% 5%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 0 0% 80%;
-  }
-}
+/* Theme-driven Design System — NO defaults. All values injected by active theme. */
 
 @layer base {
   * {
@@ -130,7 +36,7 @@
     box-shadow: 0 10px 40px -10px hsl(var(--warm-brown) / 0.2);
   }
 
-  /* Cart drawer scrollbar - professional thin design */
+  /* Cart drawer scrollbar */
   .cart-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
@@ -154,7 +60,6 @@
     background-color: hsl(var(--muted-foreground) / 0.4);
   }
 
-  /* Hide scrollbar on desktop, show on hover */
   @media (min-width: 768px) {
     .cart-scroll::-webkit-scrollbar-thumb {
       background-color: transparent;

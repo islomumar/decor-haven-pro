@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Theme, defaultThemes } from '@/lib/themes';
+import { Theme } from '@/lib/themes';
 
 const THEME_CACHE_KEY = 'furniture-active-theme';
 const THEME_READY_KEY = 'furniture-theme-ready';
@@ -19,7 +19,6 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Cache theme to localStorage
 const cacheTheme = (theme: Theme) => {
   try {
     localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(theme));
@@ -29,7 +28,6 @@ const cacheTheme = (theme: Theme) => {
   }
 };
 
-// Get cached theme from localStorage
 const getCachedTheme = (): Theme | null => {
   try {
     const cached = localStorage.getItem(THEME_CACHE_KEY);
@@ -42,7 +40,6 @@ const getCachedTheme = (): Theme | null => {
   return null;
 };
 
-// Check if theme has ever been loaded
 const hasThemeBeenLoaded = (): boolean => {
   try {
     return localStorage.getItem(THEME_READY_KEY) === 'true';
@@ -51,22 +48,18 @@ const hasThemeBeenLoaded = (): boolean => {
   }
 };
 
-// Apply theme to document - can be called before React mounts
 export const applyThemeToDocument = (theme: Theme) => {
   const root = document.documentElement;
   
-  // Apply color palette
   Object.entries(theme.colorPalette).forEach(([key, value]) => {
     const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
     root.style.setProperty(`--${cssVar}`, value);
   });
 
-  // Apply typography
   root.style.setProperty('--font-sans', theme.typography.fontSans);
   root.style.setProperty('--font-serif', theme.typography.fontSerif);
   root.style.setProperty('--font-heading', theme.typography.fontHeading);
 
-  // Apply component styles
   root.style.setProperty('--radius', theme.componentStyles.borderRadius);
   root.style.setProperty('--button-radius', theme.componentStyles.buttonRadius);
   root.style.setProperty('--card-radius', theme.componentStyles.cardRadius);
@@ -74,30 +67,25 @@ export const applyThemeToDocument = (theme: Theme) => {
   root.style.setProperty('--shadow-md', theme.componentStyles.shadowMd);
   root.style.setProperty('--shadow-lg', theme.componentStyles.shadowLg);
 
-  // Apply layout settings
   root.style.setProperty('--container-max-width', theme.layoutSettings.containerMaxWidth);
   root.style.setProperty('--section-spacing', theme.layoutSettings.sectionSpacing);
   root.style.setProperty('--card-padding', theme.layoutSettings.cardPadding);
 
-  // Toggle dark mode class
   if (theme.isDark) {
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
   }
   
-  // Mark theme as applied
   root.setAttribute('data-theme-loaded', 'true');
 };
 
-// Initialize theme immediately (called before React mounts)
 export const initializeTheme = (): Theme | null => {
   const cached = getCachedTheme();
   if (cached) {
     applyThemeToDocument(cached);
     return cached;
   }
-  // No cached theme - site will show loader until theme is fetched
   return null;
 };
 
@@ -143,43 +131,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           setSavedTheme(active);
           applyTheme(active);
           cacheTheme(active);
-        } else {
-          // No active theme - use first one from list
-          const firstTheme = mappedThemes[0];
-          setCurrentTheme(firstTheme);
-          setSavedTheme(firstTheme);
-          applyTheme(firstTheme);
-          cacheTheme(firstTheme);
         }
-      } else {
-        // No themes in database - use default from lib/themes
-        const defaultTheme = defaultThemes[0];
-        if (defaultTheme) {
-          setCurrentTheme(defaultTheme);
-          setSavedTheme(defaultTheme);
-          applyTheme(defaultTheme);
-          cacheTheme(defaultTheme);
-          setThemes(defaultThemes);
-        }
+        // No active theme and no fallback — site stays on loader
       }
+      // No themes in DB — site stays on loader, no fallback
     } catch (error) {
       console.error('Error fetching themes:', error);
-      // If we have cached theme, use it
+      // Use cached theme if available, otherwise stay on loader
       const cached = getCachedTheme();
       if (cached) {
         setCurrentTheme(cached);
         setSavedTheme(cached);
         applyTheme(cached);
-      } else {
-        // Use default theme as fallback
-        const defaultTheme = defaultThemes[0];
-        if (defaultTheme) {
-          setCurrentTheme(defaultTheme);
-          setSavedTheme(defaultTheme);
-          applyTheme(defaultTheme);
-          cacheTheme(defaultTheme);
-          setThemes(defaultThemes);
-        }
       }
     } finally {
       setIsLoading(false);
@@ -197,7 +160,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      // Immediately cache and apply the new theme
       if (themeToActivate) {
         const updatedTheme = { ...themeToActivate, isActive: true };
         cacheTheme(updatedTheme);
